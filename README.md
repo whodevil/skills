@@ -10,13 +10,13 @@ This repository contains self-contained, prompt-based skills that extend an Open
 
 | Skill | Directory | Description |
 |-------|-----------|-------------|
-| **reflect** | [`reflect/`](reflect/) | Session retrospective analysis. When invoked (e.g., `/reflect`), the agent scans the current conversation, categorizes effort, detects friction points, and generates a polished HTML report styled after the *WIRED* design system. The report is written to `docs/retro/` with a session-derived filename prefix and opened in your default browser. |
+| **retro** | [`retro/`](retro/) | Session retrospective analysis. When invoked (e.g., `/retro`), the agent scans the current conversation, categorizes effort, detects friction points, and generates a polished HTML report styled after the *WIRED* design system. The report is written to `docs/retro/` with a session-derived filename prefix and opened in your default browser. |
 
 ## Repository Structure
 
 ```
 .
-├── reflect/
+├── retro/
 │   └── SKILL.md              # Reflect skill definition & embedded HTML template
 ├── docs/
 │   ├── retro/                # Generated retrospective reports
@@ -31,23 +31,23 @@ This repository contains self-contained, prompt-based skills that extend an Open
 Skills are loaded by OpenCode from `~/.config/opencode/skills/`. To install a skill from this repo, create a symlink:
 
 ```bash
-ln -s /path/to/this/repo/reflect ~/.config/opencode/skills/reflect
+ln -s /path/to/this/repo/retro ~/.config/opencode/skills/retro
 ```
 
 After symlinking, the skill is available in any OpenCode session. For example:
 
 ```
-/reflect
+/retro
 ```
 
 ## Design & Planning
 
-- [`docs/superpowers/specs/2026-04-24-reflect-skill-design.md`](docs/superpowers/specs/2026-04-24-reflect-skill-design.md) — Architecture, analysis methodology, and WIRED template design for the `reflect` skill.
+- [`docs/superpowers/specs/2026-04-24-reflect-skill-design.md`](docs/superpowers/specs/2026-04-24-reflect-skill-design.md) — Architecture, analysis methodology, and WIRED template design for the `retro` skill.
 - [`docs/superpowers/plans/2026-04-24-reflect-skill-implementation.md`](docs/superpowers/plans/2026-04-24-reflect-skill-implementation.md) — Step-by-step implementation plan, verification checklist, and testing strategy (RED-GREEN-REFACTOR).
 
 ## Testing
 
-The `test-conversation.md` file provides a synthetic session log used to validate the `reflect` skill's categorization and friction-detection logic.
+The `test-conversation.md` file provides a synthetic session log used to validate the `retro` skill's categorization and friction-detection logic.
 
 ## Contributing
 

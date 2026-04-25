@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Create a self-contained opencode skill (`reflect/SKILL.md`) that analyzes the current session and generates a WIRED-styled HTML retrospective report, then opens it in the default browser.
+**Goal:** Create a self-contained opencode skill (`retro/SKILL.md`) that analyzes the current session and generates a WIRED-styled HTML retrospective report, then opens it in the default browser.
 
 **Architecture:** Single-file technique skill with embedded analysis instructions and complete WIRED HTML template. The skill instructs the agent to scan conversation context, categorize effort, detect friction points, fill the template, write to `/tmp`, and open the browser.
 
@@ -15,21 +15,21 @@
 ### Task 1: Create Skill Directory and Frontmatter
 
 **Files:**
-- Create: `/Users/whodevil/src/skills/reflect/SKILL.md`
+- Create: `/Users/whodevil/src/skills/retro/SKILL.md`
 
 - [ ] **Step 1: Create directory structure**
 
 ```bash
-mkdir -p /Users/whodevil/src/skills/reflect
+mkdir -p /Users/whodevil/src/skills/retro
 ```
 
 - [ ] **Step 2: Write YAML frontmatter and overview**
 
-Create `/Users/whodevil/src/skills/reflect/SKILL.md` with the frontmatter and overview section:
+Create `/Users/whodevil/src/skills/retro/SKILL.md` with the frontmatter and overview section:
 
 ```markdown
 ---
-name: reflect
+name: retro
 description: Use when the user wants to review the current session, analyze time spent, identify repo improvements, or generate a retrospective report.
 ---
 
@@ -42,7 +42,7 @@ Analyze the current conversation session, categorize where time and attention we
 ## When to Use
 
 - User explicitly asks for a session review or retrospective
-- User types `/reflect`
+- User types `/retro`
 - Need to identify what slowed the agent down during a session
 - Need actionable recommendations to improve the repository
 
@@ -61,8 +61,8 @@ The agent follows a three-phase analysis and generates a single HTML file:
 
 ```bash
 cd /Users/whodevil/src/skills
-git add reflect/SKILL.md
-git commit -m "feat: create reflect skill foundation with frontmatter and overview"
+git add retro/SKILL.md
+git commit -m "feat: create retro skill foundation with frontmatter and overview"
 ```
 
 ---
@@ -72,7 +72,7 @@ git commit -m "feat: create reflect skill foundation with frontmatter and overvi
 ### Task 2: Write Phase 1 — Scan & Categorize
 
 **Files:**
-- Modify: `/Users/whodevil/src/skills/reflect/SKILL.md`
+- Modify: `/Users/whodevil/src/skills/retro/SKILL.md`
 
 - [ ] **Step 1: Append Phase 1 instructions**
 
@@ -106,7 +106,7 @@ Scan the conversation context for tool calls and reasoning patterns. Bucket each
 - [ ] **Step 2: Commit**
 
 ```bash
-git add reflect/SKILL.md
+git add retro/SKILL.md
 git commit -m "feat: add Phase 1 scan and categorize instructions"
 ```
 
@@ -115,7 +115,7 @@ git commit -m "feat: add Phase 1 scan and categorize instructions"
 ### Task 3: Write Phase 2 — Detect Friction Points
 
 **Files:**
-- Modify: `/Users/whodevil/src/skills/reflect/SKILL.md`
+- Modify: `/Users/whodevil/src/skills/retro/SKILL.md`
 
 - [ ] **Step 1: Append Phase 2 instructions**
 
@@ -143,7 +143,7 @@ For each friction point, record:
 - [ ] **Step 2: Commit**
 
 ```bash
-git add reflect/SKILL.md
+git add retro/SKILL.md
 git commit -m "feat: add Phase 2 friction point detection"
 ```
 
@@ -152,7 +152,7 @@ git commit -m "feat: add Phase 2 friction point detection"
 ### Task 4: Write Phase 3 — Summarize Success Metrics
 
 **Files:**
-- Modify: `/Users/whodevil/src/skills/reflect/SKILL.md`
+- Modify: `/Users/whodevil/src/skills/retro/SKILL.md`
 
 - [ ] **Step 1: Append Phase 3 instructions**
 
@@ -173,7 +173,7 @@ Add after Phase 2:
 - [ ] **Step 2: Commit**
 
 ```bash
-git add reflect/SKILL.md
+git add retro/SKILL.md
 git commit -m "feat: add Phase 3 success metrics summarization"
 ```
 
@@ -184,7 +184,7 @@ git commit -m "feat: add Phase 3 success metrics summarization"
 ### Task 5: Write Design Tokens and CSS Rules
 
 **Files:**
-- Modify: `/Users/whodevil/src/skills/reflect/SKILL.md`
+- Modify: `/Users/whodevil/src/skills/retro/SKILL.md`
 
 - [ ] **Step 1: Append WIRED template introduction and design tokens**
 
@@ -231,7 +231,7 @@ Inject **two kinds of content** with different escaping:
 - [ ] **Step 2: Commit**
 
 ```bash
-git add reflect/SKILL.md
+git add retro/SKILL.md
 git commit -m "feat: add WIRED design tokens and CSS rules"
 ```
 
@@ -240,7 +240,7 @@ git commit -m "feat: add WIRED design tokens and CSS rules"
 ### Task 6: Write Complete HTML Template
 
 **Files:**
-- Modify: `/Users/whodevil/src/skills/reflect/SKILL.md`
+- Modify: `/Users/whodevil/src/skills/retro/SKILL.md`
 
 - [ ] **Step 1: Append the complete HTML template**
 
@@ -450,7 +450,7 @@ Add after CSS Rules:
     </section>
 
     <footer>
-      Generated by reflect skill &middot; {{TIMESTAMP}}
+      Generated by retro skill &middot; {{TIMESTAMP}}
     </footer>
   </div>
 </body>
@@ -463,7 +463,7 @@ Add after CSS Rules:
 - [ ] **Step 2: Commit**
 
 ```bash
-git add reflect/SKILL.md
+git add retro/SKILL.md
 git commit -m "feat: add complete WIRED HTML template"
 ```
 
@@ -474,7 +474,7 @@ git commit -m "feat: add complete WIRED HTML template"
 ### Task 7: Write Placeholder Filling Instructions
 
 **Files:**
-- Modify: `/Users/whodevil/src/skills/reflect/SKILL.md`
+- Modify: `/Users/whodevil/src/skills/retro/SKILL.md`
 
 - [ ] **Step 1: Append placeholder conventions and filling rules**
 
@@ -516,7 +516,7 @@ Percentages are approximate proportions based on tool-call counts, not precise m
 - [ ] **Step 2: Commit**
 
 ```bash
-git add reflect/SKILL.md
+git add retro/SKILL.md
 git commit -m "feat: add placeholder filling guide and conventions"
 ```
 
@@ -527,7 +527,7 @@ git commit -m "feat: add placeholder filling guide and conventions"
 ### Task 8: Write Execution Instructions
 
 **Files:**
-- Modify: `/Users/whodevil/src/skills/reflect/SKILL.md`
+- Modify: `/Users/whodevil/src/skills/retro/SKILL.md`
 
 - [ ] **Step 1: Append execution flow section**
 
@@ -543,7 +543,7 @@ When invoked, follow this sequence:
 3. **Copy the template** and replace all `{{PLACEHOLDER}}` markers with fragments.
 4. **Strip empty sections** according to the stripping rule.
 5. **Get timestamp** via `bash` tool: `date +%Y-%m-%d-%H-%M-%S`
-6. **Derive prefix** from session topic or project name (e.g., `skills`, `reflect-skill`).
+6. **Derive prefix** from session topic or project name (e.g., `skills`, `retro-skill`).
 7. **Ensure directory exists** via `bash` tool: `mkdir -p docs/retro`
 8. **Write the HTML** to `docs/retro/<prefix>-<timestamp>.html`
 9. **Open the browser** via `bash` tool:
@@ -555,7 +555,7 @@ When invoked, follow this sequence:
 - [ ] **Step 2: Commit**
 
 ```bash
-git add reflect/SKILL.md
+git add retro/SKILL.md
 git commit -m "feat: add execution flow instructions"
 ```
 
@@ -564,7 +564,7 @@ git commit -m "feat: add execution flow instructions"
 ### Task 9: Write Error Handling
 
 **Files:**
-- Modify: `/Users/whodevil/src/skills/reflect/SKILL.md`
+- Modify: `/Users/whodevil/src/skills/retro/SKILL.md`
 
 - [ ] **Step 1: Append error handling section**
 
@@ -587,7 +587,7 @@ Add after execution flow:
 - [ ] **Step 2: Commit**
 
 ```bash
-git add reflect/SKILL.md
+git add retro/SKILL.md
 git commit -m "feat: add error handling scenarios"
 ```
 
@@ -687,16 +687,16 @@ git commit -m "test: add synthetic conversation for RED phase baseline"
 ### Task 11: GREEN Phase — Verify Skill Works
 
 **Files:**
-- Modify: `/Users/whodevil/src/skills/reflect/SKILL.md` (if refinements needed)
+- Modify: `/Users/whodevil/src/skills/retro/SKILL.md` (if refinements needed)
 
 - [ ] **Step 1: Dispatch subagent WITH the skill**
 
 Use `Task` tool to dispatch a subagent with:
 
 ```
-You are an AI assistant with the reflect skill loaded.
+You are an AI assistant with the retro skill loaded.
 
-The skill is at /Users/whodevil/src/skills/reflect/SKILL.md. Read it and follow its instructions to analyze the conversation at /Users/whodevil/src/skills/test-conversation.md.
+The skill is at /Users/whodevil/src/skills/retro/SKILL.md. Read it and follow its instructions to analyze the conversation at /Users/whodevil/src/skills/test-conversation.md.
 
 Generate the HTML report and attempt to open it in the browser (or at least write it to `docs/retro/` and report the path if browser open fails).
 ```
@@ -712,12 +712,12 @@ Check the generated HTML at `docs/retro/*.html`:
 
 - [ ] **Step 3: Fix any issues**
 
-If the subagent misses categories or fails to generate HTML, refine the analysis instructions in `reflect/SKILL.md`. Re-test.
+If the subagent misses categories or fails to generate HTML, refine the analysis instructions in `retro/SKILL.md`. Re-test.
 
 - [ ] **Step 4: Commit GREEN phase results**
 
 ```bash
-git add reflect/SKILL.md
+git add retro/SKILL.md
 git commit -m "test: verify skill generates WIRED HTML and opens browser (GREEN phase)"
 ```
 
@@ -726,7 +726,7 @@ git commit -m "test: verify skill generates WIRED HTML and opens browser (GREEN 
 ### Task 12: REFACTOR Phase — Edge Cases
 
 **Files:**
-- Modify: `/Users/whodevil/src/skills/reflect/SKILL.md` (if loopholes found)
+- Modify: `/Users/whodevil/src/skills/retro/SKILL.md` (if loopholes found)
 
 - [ ] **Step 1: Test very short session**
 
@@ -773,7 +773,7 @@ Add explicit counters to the skill text.
 - [ ] **Step 4: Commit refactor phase**
 
 ```bash
-git add reflect/SKILL.md
+git add retro/SKILL.md
 git commit -m "refactor: close loopholes from edge case testing"
 ```
 
@@ -792,12 +792,12 @@ git commit -m "chore: remove test conversation files"
 ### Task 13: Validate Complete Skill
 
 **Files:**
-- Read: `/Users/whodevil/src/skills/reflect/SKILL.md`
+- Read: `/Users/whodevil/src/skills/retro/SKILL.md`
 
 - [ ] **Step 1: Run final validation checklist**
 
 Verify the skill contains:
-- [ ] YAML frontmatter with `name: reflect` and proper description
+- [ ] YAML frontmatter with `name: retro` and proper description
 - [ ] Overview section with purpose and when to use
 - [ ] Phase 1: Scan & Categorize with category table
 - [ ] Phase 2: Detect Friction Points with severity table
@@ -948,7 +948,7 @@ cat > docs/retro/test-render-2026-04-25-00-00-00.html << 'EOF'
     <div class="meta"><time>2026-04-24-12-00-00</time></div>
 
     <section id="summary">
-      <p class="summary-text">This is a test of the reflect skill HTML template rendering.</p>
+      <p class="summary-text">This is a test of the retro skill HTML template rendering.</p>
     </section>
 
     <section id="attention">
@@ -978,7 +978,7 @@ cat > docs/retro/test-render-2026-04-25-00-00-00.html << 'EOF'
     </section>
 
     <footer>
-      Generated by reflect skill &middot; 2026-04-24-12-00-00
+      Generated by retro skill &middot; 2026-04-24-12-00-00
     </footer>
   </div>
 </body>
@@ -993,7 +993,7 @@ open docs/retro/test-render-2026-04-25-00-00-00.html
 
 ```bash
 git add -A
-git commit -m "feat: complete reflect skill with WIRED template and testing"
+git commit -m "feat: complete retro skill with WIRED template and testing"
 ```
 
 ---
@@ -1004,10 +1004,10 @@ After completing all tasks above:
 
 1. **Symlink the skill** to the opencode skills directory:
    ```bash
-   ln -s /Users/whodevil/src/skills/reflect ~/.config/opencode/skills/reflect
+   ln -s /Users/whodevil/src/skills/retro ~/.config/opencode/skills/retro
    ```
 
-2. **Test end-to-end** by typing `/reflect` in an opencode session.
+2. **Test end-to-end** by typing `/retro` in an opencode session.
 
 3. **Verify** the browser opens with a properly styled WIRED retrospective report.
 
