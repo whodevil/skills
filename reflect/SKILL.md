@@ -44,3 +44,20 @@ Scan the conversation context for tool calls and reasoning patterns. Bucket each
 - Layer qualitative "attention weight" by considering message length and reasoning depth.
 - Detect task boundaries: a new user request following a completion message; a shift from planning to execution marked by `TodoWrite` or plan presentation; a cluster of tool calls following a reasoning block.
 - Note each task boundary: user request → agent plan → execution → completion or abandonment.
+
+### Phase 2: Detect Friction Points
+
+Look for patterns indicating the repo or workflow could be improved:
+
+| Friction Type | Signals | Severity |
+|---------------|---------|----------|
+| **Missing Docs/Config** | Failed `read`/`glob` searches for conventions; repeated `grep` for "how do we do X?" | Medium |
+| **Code Smells / Churn** | Repeated `edit` on the same file; very long files with many edits; absence of tests when test files exist | High |
+| **Error Patterns** | Same error type recurring; tool failures followed by retries; `systematic-debugging` triggered multiple times | High |
+| **Structural Gaps** | No `AGENTS.md`/`CLAUDE.md`; no test files; no `.gitignore`; inconsistent naming; missing CI config | Medium |
+| **Dependency Issues** | Repeated `npm install`/`pip install`; missing lockfile; version conflicts | Low |
+
+For each friction point, record:
+- **What happened** — concrete evidence from the conversation
+- **Why it mattered** — impact on velocity or correctness
+- **Recommended fix** — specific, actionable recommendation
