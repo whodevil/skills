@@ -87,11 +87,11 @@ Cover:
 4. Exploration cap with per-priority allocation (max 30 total):
    - Root configs: max 5
    - Entry points: max 5
-   - Source dirs: max 13 (spec says 15, but capped at 13 to respect 30-file total limit)
+   - Source dirs: max 13 (spec says 15, but the spec's own allocations sum to 32, exceeding the 30-file cap; capped at 13 to fix this inconsistency)
    - Tests: max 3
    - CI/DevOps: max 2
    - Docs/Metadata: max 2 combined
-5. Large file handling (>2000 lines or >20KB → read first 100 lines or a representative section)
+5. Large file handling (>2000 lines or >20KB → read first 100 lines or a representative section). Flag: "File X is very large; read a sample only."
 6. Context protection: if total content exceeds LLM context window, prioritize most recent/important files and summarize the rest
 7. Unreadable file handling (skip binaries/permission-denied)
 8. Factual model schema (Claim, Evidence, Type)
@@ -297,9 +297,9 @@ Since this is a prompt-based skill, testing is manual:
 
 **Test C:** Create a test repo with `README.org`. Verify the skill preserves `.org` format.
 
-**Test D:** Create a test repo with both `README.md` and `README.org`. Verify it prompts user to choose and merges concepts.
+**Test D (Spec G):** Create a test repo with both `README.md` and `README.org`. Verify it prompts user to choose and merges concepts.
 
-**Test E:** Verify the feedback loop works (provide feedback, see refinement, hit cap after 2 rounds). Verify Quit works mid-loop.
+**Test E (Spec D):** Verify the feedback loop works (provide feedback, see refinement, hit cap after 2 rounds). Verify Quit works mid-loop.
 
 **Test F (Spec E):** Empty/minimal README. Verify skill treats near-empty README as creation scenario.
 
