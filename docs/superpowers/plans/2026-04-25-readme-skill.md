@@ -90,6 +90,7 @@ Cover:
 6. Context protection: if total content exceeds LLM context window, prioritize most recent/important files and summarize the rest
 7. Unreadable file handling (skip binaries/permission-denied)
 8. Factual model schema (Claim, Evidence, Type)
+9. **Structure check:** After exploration, assess whether the codebase has recognizable structure (clear entry points, conventions, major directories). If not, bypass the category system entirely → present a minimal README suggestion and flag "Codebase structure unclear — manual review recommended." Do not proceed to Analysis/Presentation/Approval.
 
 - [ ] **Step 2: Commit**
 
@@ -175,7 +176,12 @@ Cover:
 2. Conflict resolution heuristic:
    a. Content beats structure
    b. Specific beats general
-   c. If unresolved → re-prompt with conflicting changes. Options: Choose Change A, Choose Change B, Reject Both, or Abort. If unrecognized input, re-prompt with same options. This mid-application re-prompt is NOT subject to the 2-round feedback cap.
+   c. If unresolved → re-prompt with conflicting changes. Options:
+      - Choose Change A — apply first conflicting change
+      - Choose Change B — apply second conflicting change
+      - Reject Both — discard both
+      - Abort — exit without writing any changes
+      If unrecognized input, re-prompt with same options. This mid-application re-prompt is NOT subject to the 2-round feedback cap.
 3. Apply inline to chosen primary file (preserve wording/structure)
 4. If no README → create from scratch
 5. Write back to exact original filename (or `README.md` if none existed)
@@ -203,8 +209,8 @@ Cover all edge cases from the spec:
 - No README / empty README → creation mode
 - Codebase has no recognizable structure → bypass category system, present minimal suggestion
 - User rejects all categories → "No changes approved. README left as-is."
-- User feedback contradicts evidence → respect but note in transcript: "Noted: user prefers X. Codebase evidence suggests Y. Applied user's preference."
-- Contradictory feedback across rounds → respect latest, flag inconsistency in transcript
+- User feedback contradicts evidence → respect but note in transcript only: "Noted: user prefers X. Codebase evidence suggests Y. Applied user's preference." Do NOT append notes to README itself
+- Contradictory feedback across rounds → respect latest, flag inconsistency in transcript only. Do NOT append notes to README itself
 - Write fails → present full README in code block
 - Very large README (>5000 lines / >50KB) → summarize. Flag: "README is very large; analysis may be incomplete."
 - Binary/unreadable README → "README file found but cannot be read. Please check permissions or encoding." Treat as missing but warn not to overwrite without investigating
