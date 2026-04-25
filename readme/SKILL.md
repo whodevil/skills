@@ -81,6 +81,8 @@ Systematically explore the codebase using `glob`, `read`, and `bash` tools. Buil
 
 **Context protection:** If the total content gathered exceeds what can be held in the LLM context window, prioritize the most recent/important files and summarize the rest.
 
+**Respect `.gitignore`:** Before exploration, read `.gitignore` if present. Do not explore files or directories listed in it (e.g., `node_modules/`, `__pycache__/`, `.venv/`, `dist/`, `build/`, `target/`, `.idea/`, `.vscode/`).
+
 **Unreadable files:** If `glob` finds a file that is binary, unreadable, or permission-denied, skip it and continue exploration. Do not abort.
 
 **Loose source files in root:** If source files exist in the project root but not within a "major directory," read a representative sample of up to 3 files.

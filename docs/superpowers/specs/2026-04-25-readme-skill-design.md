@@ -96,6 +96,7 @@ Systematically explore the codebase using `glob`, `read`, and `bash` tools. Prio
 - Tests: max 3 files
 - CI / DevOps: max 2 files
 - Documentation / Metadata: max 2 files combined
+**Respect `.gitignore`:** Before exploration, read `.gitignore` if present. Do not explore files or directories listed in it (e.g., `node_modules/`, `__pycache__/`, `.venv/`, `dist/`, `build/`, `target/`, `.idea/`, `.vscode/`).
 **Large exploration files:** If any exploration file exceeds ~2000 lines or ~20KB, read only the first 100 lines (or a representative section) and flag: "File X is very large; read a sample only."
 **Context protection:** If the total content gathered exceeds what can be held in the LLM context window, prioritize the most recent/important files and summarize the rest.
 
@@ -227,6 +228,7 @@ Continue until all categories are processed.
 | **Very large codebase** | Cap exploration at 30 files. Prioritize root configs, entry points, and a representative sample from each major directory. |
 | **Empty working directory** | If `glob` returns zero files (empty directory), report: "This directory appears to be empty. No README can be generated." Exit gracefully. |
 | **Exploration file unreadable** | If `glob` finds a file that is binary, unreadable, or permission-denied, skip it and continue exploration. Do not abort. |
+| **`.gitignore` entries** | Before exploration, read `.gitignore` if present. Do not explore files or directories listed in it. |
 | **Symlinked README** | Follow the symlink and read the target file only if the target is within the working directory. If the symlink points outside the working directory, do NOT follow it; treat as missing README. When writing back, if the symlink was not followed, create a new `README.md` (or `README.org`) alongside the symlink rather than overwriting the symlink itself. |
 | **Read-only README** | If the file system prevents writing, report the error and present the full proposed README content in a conversation code block. |
 | **README without extension** | Treat `README` (no extension) as equivalent to `README.md` for reading and writing. |
