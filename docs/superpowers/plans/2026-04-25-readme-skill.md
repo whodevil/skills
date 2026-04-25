@@ -54,7 +54,12 @@ Cover:
 2. `glob` for README files (`README.md`, `README.org`, case variants, no extension)
 3. If neither exists → creation mode
 4. If one exists → read and record claims (name, description, structure, features, dependencies, setup, usage, contributing, testing)
-5. If both `README.md` and `README.org` exist → prompt user to choose, read both, merge claims (use more detailed version for conflicts)
+5. If both `README.md` and `README.org` exist:
+   a. Read both files first
+   b. Build merged model of claims from both, flagging any discrepancies where they describe the same section differently
+   c. Use the more detailed version as default for conflicts. Do NOT use file mtime
+   d. Prompt user: "Both README.md and README.org exist. Which would you like to continue with?"
+   e. Record chosen primary file for write-back
 6. If `README` (no extension) coexists with `README.md` or `README.org` → prefer the extension-bearing file without prompting
 7. Tie-breaker rules for case variants (prefer standard-cased over `Readme.md`)
 8. Record chosen primary file for write-back
@@ -78,7 +83,7 @@ git commit -m "feat: add Discovery phase to /readme skill"
 Cover:
 1. Priority order (root configs → entry points → source dirs → tests → CI → docs → metadata)
 2. "Source file" definition (code extensions, exclude tests/generated/lockfiles)
-3. "Major directory" heuristic (≥5 source files or entry-point marker)
+3. "Major directory" heuristic: any top-level directory (or immediate subdirectory of `src/`) that contains ≥5 source files or an entry-point marker
 4. Exploration cap with per-priority allocation (max 30 total):
    - Root configs: max 5
    - Entry points: max 5
