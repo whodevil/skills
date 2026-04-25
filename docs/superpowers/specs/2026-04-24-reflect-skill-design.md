@@ -1,0 +1,244 @@
+# Reflect Skill Design
+
+**Date:** 2026-04-24
+**Topic:** Session Retrospective Analysis Skill (`reflect`)
+**Approach:** A — Prompt-Based Analysis with Embedded WIRED Template
+
+---
+
+## 1. Goal
+
+Create an opencode skill that, when invoked via `/reflect`, causes the agent to review the current session, analyze where its time and attention were spent, identify improvements to the repo that would have helped it perform better, and output the findings as a polished HTML document styled after the WIRED design system. The final HTML is opened in the default browser.
+
+---
+
+## 2. Architecture
+
+### 2.1 Skill Location & Structure
+
+The skill lives under the project root at:
+
+```
+reflect/
+  SKILL.md
+```
+
+It is a single, self-contained file. No companion scripts or external dependencies are required. The user will symlink this directory into `~/.config/opencode/skills/` after deployment.
+
+### 2.2 Skill Type
+
+This is a **technique skill** — a how-to guide that instructs the agent on how to perform session retrospective analysis and generate a styled report. It follows the `writing-skills` discipline: the SKILL.md itself is the "production code" and the test is a pressure scenario where a subagent simulates a conversation and is asked to reflect.
+
+### 2.3 Execution Flow (Agent Perspective)
+
+When the user types `/reflect`, the agent:
+
+1. **Receives the skill** via the standard opencode skill-loading mechanism.
+2. **Reads the SKILL.md**, which contains:
+   - Analysis instructions (what to scan for, how to categorize).
+   - The complete WIRED HTML template (inline CSS, layout structure).
+3. **Performs analysis** over the current conversation context.
+4. **Fills the template** with computed findings.
+5. **Writes the HTML** to a temporary file (`/tmp/reflect-<timestamp>.html`).
+6. **Opens the browser** via a `bash` tool call (`open /tmp/reflect-...html` on macOS, `xdg-open` on Linux).
+
+---
+
+## 3. Components
+
+### 3.1 YAML Frontmatter
+
+```yaml
+---
+name: reflect
+description: Use when the user wants to review the current session, analyze time spent, identify repo improvements, or generate a retrospective report.
+---
+```
+
+Constraints:
+- `name`: letters, numbers, hyphens only.
+- `description`: starts with "Use when...", third person, no workflow summary, under 500 characters.
+
+### 3.2 Analysis Instructions
+
+The core of the skill is a structured prompt that tells the agent how to analyze the conversation. It is broken into three phases:
+
+#### Phase 1: Scan & Categorize
+
+The agent scans the conversation for tool calls and reasoning patterns, then buckets them into:
+
+| Category | Signals |
+|----------|---------|
+| **Coding** | `Write`, `Edit`, `read` on source files; code generation blocks; refactoring commands |
+| **Debugging** | `systematic-debugging` skill invocations; error logs; repeated tool calls on the same file; `bash` debugging commands |
+| **Research** | `websearch`, `webfetch`, `codesearch`, `context7_query-docs`; reading docs or external resources |
+| **Testing** | `test-driven-development` skill; test execution commands; assertion failures; `pytest`, `jest`, etc. |
+| **Waiting** | `bash` timeouts; external process waits; sleep-like patterns |
+| **Misc** | User greetings, clarifying questions, plan updates, meta-discussion |
+
+Heuristics:
+- Count tool calls per category.
+- Estimate "attention weight" by message length and reasoning depth (qualitative, not quantitative).
+- Note task boundaries: user request → agent plan → execution → completion or abandonment.
+
+#### Phase 2: Detect Friction Points
+
+The agent looks for patterns that indicate the repo or workflow could be improved:
+
+| Friction Type | Signals | Severity |
+|---------------|---------|----------|
+| **Missing Docs/Config** | Failed `read`/`glob` searches for conventions; repeated `grep` for "how do we do X?" | Medium |
+| **Code Smells / Churn** | Repeated `edit` on the same file; very long files with many edits; absence of tests when test files exist | High |
+| **Error Patterns** | Same error type recurring; tool failures followed by retries; `systematic-debugging` triggered multiple times | High |
+| **Structural Gaps** | No `AGENTS.md`/`CLAUDE.md`; no test files; no `.gitignore`; inconsistent naming; missing CI config | Medium |
+| **Dependency Issues** | Repeated `npm install`/`pip install`; missing lockfile; version conflicts | Low |
+
+For each friction point, the agent records:
+- What happened (concrete evidence from the conversation).
+- Why it mattered (impact on velocity or correctness).
+- Recommended fix (specific, actionable).
+
+#### Phase 3: Summarize Success Metrics
+
+- Tasks initiated vs. completed (with brief descriptions).
+- Key decisions made and their rationale.
+- Token/attention distribution across categories (qualitative estimate).
+
+### 3.3 WIRED HTML Template
+
+The skill embeds a complete, self-contained HTML document as a fenced code block. The agent copies this template, replaces placeholder sections with computed values, and writes the file.
+
+#### Design Tokens (Embedded in `<style>`)
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `background` | `#FDFCF8` | Page background (paper-white) |
+| `text-primary` | `#1A1A1A` | Body text, headlines |
+| `text-secondary` | `#595959` | Captions, metadata, secondary info |
+| `accent` | `#0A6ECC` | Links, highlights, ink-blue accent only |
+| `border` | `#E2E2E2` | Section dividers, table borders |
+| `kicker` | `ui-monospace, SF Mono, Menlo, monospace` | Category tags, timestamps, labels |
+| `display` | `Georgia, Times New Roman, Times, serif` | Headlines, section titles |
+| `body` | `Georgia, Times New Roman, Times, serif` | Body copy, long-form text |
+
+#### Layout Structure
+
+The HTML is a single-column, broadsheet-dense layout:
+
+1. **Masthead**: Session title ("Session Retrospective"), project name, timestamp. Kicker in mono above.
+2. **Executive Summary**: 3–4 sentence overview. Large serif text.
+3. **Attention Breakdown**: CSS-based horizontal bar chart showing category percentages. Mono labels, ink-blue bars.
+4. **Task Log**: Table of tasks (completed vs. abandoned), with effort estimates and outcomes.
+5. **Friction Points & Recommendations**: Numbered list. Each item has a kicker severity badge (HIGH, MEDIUM, LOW), a headline, evidence, and a recommended fix.
+6. **Key Decisions**: Bullet list of major architectural or technical choices, with rationale.
+7. **Footer**: Generated-by line, mono timestamp.
+
+#### CSS Rules
+
+- No `border-radius` anywhere; sharp, print-style corners.
+- Hierarchy via borders (`1px solid #E2E2E2`), weight (`font-weight: 700` for headlines), and whitespace — no drop shadows.
+- Generous line height (`1.6`) for body text; tight leading (`1.1`) for display headlines.
+- Max content width `680px`, centered, with generous top/bottom padding (`64px`).
+
+---
+
+## 4. Data Flow
+
+```
+User types /reflect
+    ↓
+Agent loads reflect/SKILL.md
+    ↓
+Agent scans conversation context
+    ├── Categorize tool calls and reasoning
+    ├── Detect friction patterns
+    └── Compute success metrics
+    ↓
+Agent fills WIRED HTML template
+    ├── Replace title/timestamp placeholders
+    ├── Inject category percentages into bar chart
+    ├── Build task log rows
+    ├── Build friction point list
+    └── Build key decisions list
+    ↓
+Agent writes HTML to /tmp/reflect-<timestamp>.html
+    ↓
+Agent opens browser via bash tool
+    └── macOS: open <file>
+    └── Linux: xdg-open <file>
+```
+
+---
+
+## 5. Error Handling
+
+| Scenario | Behavior |
+|----------|----------|
+| **Very short session** (< 5 messages) | Generate a minimal report: "Session too brief for meaningful analysis." Still styled, still opens browser. |
+| **No tool calls found** | Report says "No tool activity detected — session may be purely conversational." Categories show 100% Misc. |
+| **Browser open fails** | Report the file path in the conversation so the user can open it manually. |
+| **Template variable missing** | Leave placeholder text or omit section; never crash the HTML generation. |
+
+---
+
+## 6. Testing Strategy
+
+This is a **technique skill**, so testing follows the `writing-skills` RED-GREEN-REFACTOR cycle.
+
+### RED (Baseline)
+
+1. Create a synthetic conversation log with known patterns:
+   - 10 `Edit` calls (coding)
+   - 3 `systematic-debugging` invocations (debugging)
+   - 5 `websearch` calls (research)
+   - 2 test failures (testing)
+   - 1 missing `AGENTS.md` search (friction)
+2. Dispatch a subagent WITHOUT the skill. Ask it to analyze the conversation and produce a report.
+3. Observe baseline behavior: likely misses categories, produces plain text, no styling, no browser opening.
+
+### GREEN (Write Skill)
+
+4. Write the SKILL.md with the analysis instructions and WIRED template.
+5. Re-run the subagent WITH the skill loaded. Verify:
+   - Categories are correctly identified.
+   - Friction points are surfaced.
+   - HTML is generated and contains WIRED design tokens.
+
+### REFACTOR (Close Loopholes)
+
+6. Test edge cases (short session, no tool calls). Ensure graceful output.
+7. Verify the subagent attempts to open the browser (or at least provides the path).
+8. Check that the HTML renders correctly in a real browser (manual verification).
+
+---
+
+## 7. File Output
+
+The generated HTML is written to:
+
+```
+/tmp/reflect-YYYY-MM-DD-HH-MM-SS.html
+```
+
+This location is ephemeral by design — the report is meant for immediate review, not archival. If the user wants persistence, they can save the file manually from the browser.
+
+---
+
+## 8. Dependencies
+
+- **None.** The skill is entirely self-contained.
+- The agent relies on its own conversation context (already loaded).
+- Browser opening uses standard OS commands (`open` / `xdg-open`) available on all macOS/Linux systems.
+
+---
+
+## 9. Approval Status
+
+| Section | Approved |
+|---------|----------|
+| Architecture & Skill Structure | ✅ |
+| Analysis Methodology | ✅ |
+| HTML Output & WIRED Styling | ✅ |
+| Testing Strategy | ✅ |
+
+**Overall Design:** **APPROVED** by user on 2026-04-24.
