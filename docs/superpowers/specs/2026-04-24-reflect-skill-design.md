@@ -39,10 +39,10 @@ When the user types `/retro`, the agent:
    - The complete WIRED HTML template (inline CSS, layout structure).
 3. **Performs analysis** over the current conversation context.
 4. **Fills the template** with computed findings.
-5. **Writes the HTML** to `docs/retro/YYYY-MM-DD-HH-MM-SS-<prefix>.html`.
-6. **Opens the browser** via a `bash` tool call (`open docs/retro/YYYY-MM-DD-HH-MM-SS-<prefix>.html` on macOS, `xdg-open docs/retro/YYYY-MM-DD-HH-MM-SS-<prefix>.html` on Linux).
+5. **Writes the HTML** to `docs/retro/YYYY-MM-DD-HHMMSS-<prefix>.html`.
+6. **Opens the browser** via a `bash` tool call (`open docs/retro/YYYY-MM-DD-HHMMSS-<prefix>.html` on macOS, `xdg-open docs/retro/YYYY-MM-DD-HHMMSS-<prefix>.html` on Linux).
 
-The prefix is derived from the session's primary topic or project name (e.g., `skills`, `retro-skill`, `auth-bug-fix`). The timestamp is obtained via a `bash` tool call: `date +%Y-%m-%d-%H-%M-%S`.
+The prefix is derived from the session's primary topic or project name (e.g., `skills`, `retro-skill`, `auth-bug-fix`). The timestamp is obtained via a `bash` tool call: `date +%Y-%m-%d-%H%M%S`.
 
 ---
 
@@ -525,7 +525,7 @@ This is a **technique skill**, so testing follows the `writing-skills` RED-GREEN
 The generated HTML is written to:
 
 ```
-docs/retro/YYYY-MM-DD-HH-MM-SS-<prefix>.html
+docs/retro/YYYY-MM-DD-HHMMSS-<prefix>.html
 ```
 
 The `docs/retro/` directory is created if it does not exist. The prefix is derived from the session's primary topic or project name (e.g., `skills`, `retro-skill`). This keeps reports organized and discoverable within the repository.

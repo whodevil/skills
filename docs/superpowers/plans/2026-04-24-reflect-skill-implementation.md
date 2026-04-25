@@ -486,7 +486,7 @@ Add after the template:
 | Placeholder | Content Type | Surrounding Markup | Fallback |
 |-------------|--------------|-------------------|----------|
 | `{{PROJECT_NAME}}` | Plain text string (HTML-escaped) | Inside `<h1>` masthead | `Unknown Project` |
-| `{{TIMESTAMP}}` | Plain text string (HTML-escaped) | Inside `<time>` element | Current timestamp from `date +%Y-%m-%d-%H-%M-%S` |
+| `{{TIMESTAMP}}` | Plain text string (HTML-escaped) | Inside `<time>` element | Current timestamp from `date +%Y-%m-%d-%H%M%S` |
 | `{{EXECUTIVE_SUMMARY}}` | HTML paragraph(s) | Inside `<section id="summary">` | Strip section |
 | `{{ATTENTION_BREAKDOWN_BARS}}` | HTML `<div class="bar-row">` elements | Inside `<section id="attention">` | Strip section |
 | `{{TASK_LOG_ROWS}}` | HTML `<tr>` elements | Inside `<tbody>` of task table | Strip section |
@@ -542,7 +542,7 @@ When invoked, follow this sequence:
 2. **Build HTML fragments** for each placeholder based on the analysis.
 3. **Copy the template** and replace all `{{PLACEHOLDER}}` markers with fragments.
 4. **Strip empty sections** according to the stripping rule.
-5. **Get timestamp** via `bash` tool: `date +%Y-%m-%d-%H-%M-%S`
+5. **Get timestamp** via `bash` tool: `date +%Y-%m-%d-%H%M%S`
 6. **Derive prefix** from session topic or project name (e.g., `skills`, `retro-skill`).
 7. **Ensure directory exists** via `bash` tool: `mkdir -p docs/retro`
 8. **Write the HTML** to `docs/retro/<timestamp>-<prefix>.html`

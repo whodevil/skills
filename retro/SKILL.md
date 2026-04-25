@@ -323,7 +323,7 @@ Inject **two kinds of content** with different escaping:
 | Placeholder | Content Type | Surrounding Markup | Fallback |
 |-------------|--------------|-------------------|----------|
 | `{{PROJECT_NAME}}` | Plain text string (HTML-escaped) | Inside `<h1>` masthead | `Unknown Project` |
-| `{{TIMESTAMP}}` | Plain text string (HTML-escaped) | Inside `<time>` element | Current timestamp from `date +%Y-%m-%d-%H-%M-%S` |
+| `{{TIMESTAMP}}` | Plain text string (HTML-escaped) | Inside `<time>` element | Current timestamp from `date +%Y-%m-%d-%H%M%S` |
 | `{{EXECUTIVE_SUMMARY}}` | HTML paragraph(s) | Inside `<section id="summary">` | Strip section |
 | `{{ATTENTION_BREAKDOWN_BARS}}` | HTML `<div class="bar-row">` elements | Inside `<section id="attention">` | Strip section |
 | `{{TASK_LOG_ROWS}}` | HTML `<tr>` elements | Inside `<tbody>` of task table | Strip section |
@@ -357,14 +357,14 @@ When invoked, follow this sequence:
 2. **Build HTML fragments** for each placeholder based on the analysis.
 3. **Copy the template** and replace all `{{PLACEHOLDER}}` markers with fragments.
 4. **Strip empty sections** according to the stripping rule.
-5. **Get timestamp** via `bash` tool: `date +%Y-%m-%d-%H-%M-%S`
+5. **Get timestamp** via `bash` tool: `date +%Y-%m-%d-%H%M%S`
 6. **Write the HTML** to `docs/retro/<timestamp>-<prefix>.html`
 7. **Open the browser** via `bash` tool:
    - macOS: `open docs/retro/<timestamp>-<prefix>.html`
    - Linux: `xdg-open docs/retro/<timestamp>-<prefix>.html`
    - Windows: **out of scope** — report the file path to the user instead
 
-**Filename prefix:** Derive a short, relevant prefix from the session content. Use the project name (e.g., `skills`), or if the session has a clear primary topic, use a 2–4 word kebab-case summary (e.g., `retro-skill`, `auth-bug-fix`, `api-refactor`). Fallback to `session` if no clear topic emerges. The full filename format is: `YYYY-MM-DD-HH-MM-SS-<prefix>.html`.
+**Filename prefix:** Derive a short, relevant prefix from the session content. Use the project name (e.g., `skills`), or if the session has a clear primary topic, use a 2–4 word kebab-case summary (e.g., `retro-skill`, `auth-bug-fix`, `api-refactor`). Fallback to `session` if no clear topic emerges. The full filename format is: `YYYY-MM-DD-HHMMSS-<prefix>.html`.
 
 ## Error Handling
 
