@@ -61,3 +61,13 @@ For each friction point, record:
 - **What happened** — concrete evidence from the conversation
 - **Why it mattered** — impact on velocity or correctness
 - **Recommended fix** — specific, actionable recommendation
+
+### Phase 3: Summarize Success Metrics
+
+- **Tasks initiated vs. completed** — with brief descriptions of each
+- **Per-task effort estimate** — approximate attention investment based on message count, reasoning depth, and tool calls within each task boundary:
+  - `Low` — few messages, simple execution
+  - `Medium` — moderate back-and-forth, some complexity
+  - `High` — complex, many iterations, debugging required
+- **Key decisions made** — major architectural or technical choices, with rationale
+- **Attention distribution** — approximate percentage of effort per category (derived from tool-call counts)
