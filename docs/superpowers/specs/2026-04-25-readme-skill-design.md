@@ -72,7 +72,7 @@ User invokes /readme
    c. If still tied (identical line count and heading count), prefer `README.md` over `README.org` as the final fallback.
    d. Note the presence of both files to the user.
    e. **Significant difference check:** If one file contains ≥2 major sections (e.g., "Features", "Installation", "API") that the other lacks entirely, prompt the user: "Both README.md and README.org exist. Which should I update?" Otherwise, proceed with the tie-breaker winner.
-5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). Treat these as equivalent to `README.md` / `README.org`. If both a case-variant and standard-cased version exist (e.g., `Readme.md` and `README.md`), prefer the standard-cased `README.md` / `README.org` before applying the line-count heuristic.
+5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). If `README` (no extension) is found, treat it as a valid README file. When writing back, preserve the exact original filename (e.g., if the original was `README`, write back to `README`; do not rename to `README.md`). If both a case-variant and standard-cased version exist (e.g., `Readme.md` and `README.md`), prefer the standard-cased `README.md` / `README.org` before applying the line-count heuristic.
 
 ### 2.2 Phase 2: Exploration
 
@@ -88,7 +88,24 @@ Systematically explore the codebase using `glob`, `read`, and `bash` tools. Prio
 
 **Exploration cap:** Max 30 files read in a single invocation to avoid excessive tool calls. Prioritize root configs, entry points, and a representative sample from each major directory.
 
-**Goal:** Build a factual model of what the codebase actually contains, how it works, and how to set it up. The model is an internal list of claims (e.g., "Project is a Python CLI tool", "Entry point is `src/main.py`", "Dependencies listed in `pyproject.toml`: requests, click") that the Analysis phase compares against the README claims.
+**Goal:** Build a factual model of what the codebase actually contains, how it works, and how to set it up.
+
+**Factual model schema:** The model is an internal list of claims, each with this structure:
+- **Claim:** A factual statement about the codebase (e.g., "Project is a Python CLI tool")
+- **Evidence:** The file path or snippet supporting the claim (e.g., `src/main.py`)
+- **Type:** One of `feature`, `setup`, `dependency`, `api`, `structure`
+
+Example claims:
+```
+- Claim: "Project exports a `retro` skill for OpenCode"
+  Evidence: "retro/SKILL.md contains skill definition and HTML template"
+  Type: feature
+- Claim: "Dependencies: none (pure Markdown skill)"
+  Evidence: "No package.json, pyproject.toml, or similar found"
+  Type: dependency
+```
+
+The Analysis phase compares these claims against the README claims.
 
 ### 2.3 Phase 3: Analysis
 
@@ -109,7 +126,7 @@ For each discrepancy, record:
 - **Evidence:** Concrete file paths, code snippets, or directory listings from the codebase
 - **Proposed change:** Specific text or section to add, update, or remove
 
-If no README exists, treat all categories as "missing" and generate suggestions from scratch using the codebase model.
+If no README exists, treat all categories as "missing" and generate suggestions from scratch using the codebase model. However, if the codebase model contains no evidence for a particular category (e.g., no dependencies found, no CI config), that category may still have zero issues and should be skipped per the empty-category rule in Phase 4.
 
 ### 2.4 Phase 4: Presentation
 
@@ -139,6 +156,7 @@ For each category, prompt the user with:
 > - **Reject** — discard all proposed changes in this category
 > - **Skip** — save for later, move to the next category
 > - **Feedback** — tell me how to refine (e.g., "focus on X", "this is wrong because Y")
+> - **Quit** — exit without applying any pending or future changes
 
 **If Feedback:**
 1. Record the user's feedback.
@@ -153,6 +171,8 @@ For each category, prompt the user with:
 
 **If Skip:** Note the category as skipped and move on. (User can re-invoke `/readme` later to revisit.)
 
+**If Quit:** Immediately discard all pending and future changes, exit the loop, and report: "Exited without applying any changes. README left as-is."
+
 **Unrecognized input:** If the user responds with something other than Approve, Reject, Skip, or Feedback (e.g., "maybe" or a random question), re-prompt with: "I didn't understand that. Please choose: Approve, Reject, Skip, or Feedback." Do not proceed until a valid choice is given.
 
 Continue until all categories are processed.
@@ -160,10 +180,13 @@ Continue until all categories are processed.
 ### 2.6 Phase 6: Application
 
 1. Compile all approved changes from all categories.
-2. **Conflict resolution:** If approved changes from different categories conflict, resolve by preferring the change with the **narrowest scope** (i.e., the one that touches the fewest lines or the smallest section). For example, if Structure/Formatting reorders a section while API/Usage adds a code example within that section, the API/Usage change wins because it is more targeted. If the conflict cannot be resolved by this rule, re-prompt the user with the conflicting changes before writing.
+2. **Conflict resolution:** If approved changes from different categories conflict, apply this prompt-friendly heuristic in order:
+   a. **Content beats structure** — A change that adds or corrects content within a section (e.g., API/Usage adds an example) takes precedence over a change that moves or reorders that section (e.g., Structure/Formatting reorders it).
+   b. **Specific beats general** — A change targeting a subsection takes precedence over a change targeting the whole document.
+   c. If neither rule resolves the conflict, re-prompt the user with the conflicting changes before writing.
 3. If a README exists, apply the changes inline, preserving as much existing wording and structure as possible.
 4. If no README exists, create a new one from scratch using the approved content, structured according to best-practice guidelines.
-5. Write the result to `README.md` or `README.org` (matching the original format, or defaulting to `.md` if none existed).
+5. Write the result back to the exact original filename (e.g., `README.md`, `README.org`, or `README`). If no README existed, default to `README.md`.
 6. Confirm to the user: "README updated with X approved changes from Y categories."
 
 ---
@@ -177,8 +200,10 @@ Continue until all categories are processed.
 | **Codebase has no recognizable structure** | If `glob` finds only scattered files with no clear entry points or conventions, present a minimal README suggestion and flag: "Codebase structure unclear — manual review recommended." |
 | **User rejects all categories** | Gracefully exit without writing anything: "No changes approved. README left as-is." |
 | **User gives feedback that contradicts codebase evidence** | Respect user's feedback but note the discrepancy: "Noted: user prefers X. Codebase evidence suggests Y. Applied user's preference." |
+| **Contradictory feedback across rounds** | If the user gives feedback in round 1 (e.g., "don't mention X") and then contradicts it in round 2 (e.g., "why didn't you mention X?"), respect the most recent feedback and flag the inconsistency: "Noted: you previously asked to omit X. Applying your latest request to include X." |
 | **Write to README fails** | Report the error and present the full proposed README content in a conversation code block so the user can apply it manually. |
 | **README is `.org` format** | Preserve `.org` format. Read existing `README.org` and write updates back to `README.org` using Org-mode syntax. Never suggest converting to `.md`. |
+| **Very large README** | If the README exceeds ~5000 lines or ~50KB, summarize it rather than reading in full. Flag to the user: "README is very large; analysis may be incomplete." |
 | **Very large codebase** | Cap exploration at 30 files. Prioritize root configs, entry points, and a representative sample from each major directory. |
 | **Empty working directory** | If `glob` returns zero files (empty directory), report: "This directory appears to be empty. No README can be generated." Exit gracefully. |
 | **Exploration file unreadable** | If `glob` finds a file that is binary, unreadable, or permission-denied, skip it and continue exploration. Do not abort. |
