@@ -75,7 +75,7 @@ Is codebase structure recognizable?
    b. **Prompt the user:** "Both README.md and README.org exist. Which would you like to continue with?"
    c. **Merge attempt:** Regardless of which the user chooses, build a merged model of claims by combining the contents of both files. If both files describe the same section differently, flag the discrepancy and use the more detailed version as the default. Do NOT rely on file mtime.
    d. Record the user's chosen primary file for write-back.
-5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). If `README` (no extension) is found, treat it as a valid README file. When writing back, preserve the exact original filename (e.g., if the original was `README`, write back to `README`; do not rename to `README.md`). If both a case-variant and standard-cased version exist (e.g., `Readme.md` and `README.md`), prefer the standard-cased `README.md` / `README.org`.
+5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). If `README` (no extension) is found, treat it as a valid README file. When writing back, preserve the exact original filename. If both `README` (no extension) and `README.md` / `README.org` exist, prefer `README.md` / `README.org` (the extension-bearing file) and treat `README` as a secondary candidate only if no extension-bearing file exists. If both a case-variant and standard-cased version exist (e.g., `Readme.md` and `README.md`), prefer the standard-cased `README.md` / `README.org`.
 
 ### 2.2 Phase 2: Exploration
 
@@ -83,13 +83,21 @@ Systematically explore the codebase using `glob`, `read`, and `bash` tools. Prio
 
 1. **Root config files** — `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `build.gradle`, `Makefile`, etc.
 2. **Entry points** — main application files, CLI entry points, library exports.
-3. **Source directories** — representative files from each major directory. A "major directory" is any top-level directory (or immediate subdirectory of `src/`) that contains ≥5 source files or an entry-point marker (e.g., `__init__.py`, `index.js`, `main.py`, `mod.rs`).
+3. **Source directories** — representative files from each major directory. A "major directory" is any top-level directory (or immediate subdirectory of `src/`) that contains ≥5 source files or an entry-point marker (e.g., `__init__.py`, `index.js`, `main.py`, `mod.rs`). A "source file" is any file with a code extension (e.g., `.py`, `.js`, `.ts`, `.rs`, `.go`, `.java`, `.c`, `.cpp`, `.h`, `.swift`, `.kt`, `.scala`, `.rb`, `.php`, `.cs`) excluding test files, generated files, lockfiles, and build artifacts.
 4. **Tests** — presence and structure of test files.
 5. **CI / DevOps** — `.github/workflows/`, `.gitlab-ci.yml`, `Dockerfile`, etc.
 6. **Documentation** — `docs/`, `AGENTS.md`, `CLAUDE.md`, changelogs.
 7. **Other metadata** — `.gitignore`, `LICENSE`, `CONTRIBUTING.md`.
 
-**Exploration cap:** Max 30 files read in a single invocation to avoid excessive tool calls. Prioritize root configs, entry points, and a representative sample from each major directory.
+**Exploration cap:** Max 30 files read in a single invocation. Allocate files per priority level to ensure coverage:
+- Root config files: max 5 files
+- Entry points: max 5 files
+- Source directories: max 15 files (representative sample from each major directory)
+- Tests: max 3 files
+- CI / DevOps: max 2 files
+- Documentation / Metadata: max 2 files combined
+**Large exploration files:** If any exploration file exceeds ~2000 lines or ~20KB, read only the first 100 lines (or a representative section) and flag: "File X is very large; read a sample only."
+**Context protection:** If the total content gathered exceeds what can be held in the LLM context window, prioritize the most recent/important files and summarize the rest.
 
 **Goal:** Build a factual model of what the codebase actually contains, how it works, and how to set it up.
 
@@ -116,7 +124,7 @@ Compare the Discovery claims against the Exploration findings and the hardcoded 
 
 Group discrepancies into these categories. Each category owns a distinct concern in *analysis* — no overlap during fact-finding. However, during *application*, approved changes from different categories may target the same README section (e.g., Structure/Formatting may reorder a section while API/Usage adds content within it). This is expected and handled by the conflict-resolution rules in Phase 6.
 
-**Deduplication rule:** If the same underlying discrepancy could be flagged by multiple categories (e.g., a missing CLI feature noted in both Feature Coverage and API/Usage), emit it only in the **most specific** category. In this example, API/Usage is more specific than Feature Coverage, so the issue belongs in API/Usage only.
+**Deduplication rule:** If the same underlying discrepancy could be flagged by multiple categories (e.g., a missing CLI feature noted in both Feature Coverage and API/Usage), emit it only in the **most specific** category. Specificity hierarchy (most specific first): API/Usage > Setup/Installation > Dependencies > Feature Coverage > Structure/Formatting. If ambiguity remains (e.g., a missing build step that could fit Dependencies or Setup/Installation), prefer the category that appears first in this list.
 
 | Category | What to Check | Ownership Boundary |
 |----------|---------------|--------------------|
@@ -192,7 +200,8 @@ Continue until all categories are processed.
       - **Choose Change A** — apply the first conflicting change
       - **Choose Change B** — apply the second conflicting change
       - **Reject Both** — discard both conflicting changes
-      This mid-application re-prompt is a separate forced decision and is NOT subject to the 2-round feedback cap from Phase 5.
+      - **Abort** — exit without writing any changes
+      If the user provides unrecognized input, re-prompt: "Please choose: Change A, Change B, Reject Both, or Abort." This mid-application re-prompt is a separate forced decision and is NOT subject to the 2-round feedback cap from Phase 5.
 3. If a README exists (or both exist), apply the changes inline to the user's chosen primary file, preserving as much existing wording and structure as possible. If both files existed, the merged model from Discovery ensures content from both is considered.
 4. If no README exists, create a new one from scratch using the approved content, structured according to best-practice guidelines.
 5. Write the result back to the user's chosen primary filename. If no README existed, default to `README.md`.
