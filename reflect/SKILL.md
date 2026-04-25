@@ -317,3 +317,34 @@ Inject **two kinds of content** with different escaping:
 </body>
 </html>
 ```
+
+### Placeholder Filling Guide
+
+| Placeholder | Content Type | Surrounding Markup | Fallback |
+|-------------|--------------|-------------------|----------|
+| `{{PROJECT_NAME}}` | Plain text string (HTML-escaped) | Inside `<h1>` masthead | `Unknown Project` |
+| `{{TIMESTAMP}}` | Plain text string (HTML-escaped) | Inside `<time>` element | Current timestamp from `date +%Y-%m-%d-%H-%M-%S` |
+| `{{EXECUTIVE_SUMMARY}}` | HTML paragraph(s) | Inside `<section id="summary">` | Strip section |
+| `{{ATTENTION_BREAKDOWN_BARS}}` | HTML `<div class="bar-row">` elements | Inside `<section id="attention">` | Strip section |
+| `{{TASK_LOG_ROWS}}` | HTML `<tr>` elements | Inside `<tbody>` of task table | Strip section |
+| `{{FRICTION_POINTS}}` | HTML `<li>` elements | Inside `<ol>` in `<section id="friction">` | Strip section |
+| `{{KEY_DECISIONS}}` | HTML `<li>` elements | Inside `<ul>` in `<section id="decisions">` | Strip section |
+
+**Project Name Source:** Derive from current working directory basename (e.g., `skills` if in `/Users/whodevil/src/skills`). If unavailable or home directory, use `Unknown Project`.
+
+**Stripping Rule:** If a section-wrapped placeholder has no content, remove the entire `<section id="...">...</section>` block. `{{PROJECT_NAME}}` and `{{TIMESTAMP}}` are never stripped — they always have fallback values.
+
+**Bar Chart Markup:**
+Each category becomes:
+```html
+<div class="bar-row">
+  <span class="bar-label">Coding</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width: 45%;"></div>
+  </div>
+  <span class="bar-value">45%</span>
+</div>
+```
+Percentages are approximate proportions based on tool-call counts, not precise measurements.
+
+**Multi-line content** (code snippets, error logs) is wrapped in `<pre><code>` blocks with escaping rules applied.
