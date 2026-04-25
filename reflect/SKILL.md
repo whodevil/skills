@@ -348,3 +348,29 @@ Each category becomes:
 Percentages are approximate proportions based on tool-call counts, not precise measurements.
 
 **Multi-line content** (code snippets, error logs) is wrapped in `<pre><code>` blocks with escaping rules applied.
+
+## Execution Flow
+
+When invoked, follow this sequence:
+
+1. **Analyze the conversation context** using the three-phase method above.
+2. **Build HTML fragments** for each placeholder based on the analysis.
+3. **Copy the template** and replace all `{{PLACEHOLDER}}` markers with fragments.
+4. **Strip empty sections** according to the stripping rule.
+5. **Get timestamp** via `bash` tool: `date +%Y-%m-%d-%H-%M-%S`
+6. **Write the HTML** to `/tmp/reflect-<timestamp>.html`
+7. **Open the browser** via `bash` tool:
+   - macOS: `open /tmp/reflect-<timestamp>.html`
+   - Linux: `xdg-open /tmp/reflect-<timestamp>.html`
+   - Windows: **out of scope** — report the file path to the user instead
+
+## Error Handling
+
+| Scenario | Behavior |
+|----------|----------|
+| **Very short session** (< 5 messages) | Generate a minimal report: "Session too brief for meaningful analysis." Still styled, still opens browser. |
+| **No tool calls found** | Report says "No tool activity detected — session may be purely conversational." Categories show 100% Misc. |
+| **Browser open fails** | Report the file path in the conversation so the user can open it manually. |
+| **Unsupported OS (Windows)** | Skip browser-open. Report the file path in the conversation. |
+| **Template variable missing** | Strip out the unfilled placeholder and its surrounding `<section>` wrapper. Never crash HTML generation. |
+| **`/tmp` not writable** | Attempt to write to the current working directory as fallback. If that also fails, output the raw HTML in a conversation message block. |
