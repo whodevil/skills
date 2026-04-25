@@ -70,7 +70,7 @@ User invokes /readme
    a. **Line count** — whichever file has more non-empty lines.
    b. If line count is within 10% of each other, compare **number of H2+ headings** — more structured sections wins.
    c. If still tied (identical line count and heading count), prefer `README.md` over `README.org` as the final fallback.
-   d. Note the presence of both files to the user.
+   d. **Note the presence of both files** to the user after the tie-breaker winner is selected, unless the significant difference check (step e) triggers a prompt.
    e. **Significant difference check:** Detect "major sections" by counting H2+ headings (e.g., `## Features`, `## Installation`). If one file contains ≥2 H2+ heading topics that the other lacks entirely, prompt the user: "Both README.md and README.org exist. Which should I update?" Otherwise, proceed with the tie-breaker winner.
 5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). If `README` (no extension) is found, treat it as a valid README file. When writing back, preserve the exact original filename (e.g., if the original was `README`, write back to `README`; do not rename to `README.md`). If both a case-variant and standard-cased version exist (e.g., `Readme.md` and `README.md`), prefer the standard-cased `README.md` / `README.org` before applying the line-count heuristic.
 
@@ -80,7 +80,7 @@ Systematically explore the codebase using `glob`, `read`, and `bash` tools. Prio
 
 1. **Root config files** — `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `build.gradle`, `Makefile`, etc.
 2. **Entry points** — main application files, CLI entry points, library exports.
-3. **Source directories** — representative files from each major directory. A "major directory" is any top-level directory (or immediate subdirectory of `src/`) that contains ≥5 source files or an entry-point marker (e.g., `__init__.py`, `index.js`, `main.py`, `Cargo.toml`).
+3. **Source directories** — representative files from each major directory. A "major directory" is any top-level directory (or immediate subdirectory of `src/`) that contains ≥5 source files or an entry-point marker (e.g., `__init__.py`, `index.js`, `main.py`, `mod.rs`).
 4. **Tests** — presence and structure of test files.
 5. **CI / DevOps** — `.github/workflows/`, `.gitlab-ci.yml`, `Dockerfile`, etc.
 6. **Documentation** — `docs/`, `AGENTS.md`, `CLAUDE.md`, changelogs.
@@ -199,8 +199,8 @@ Continue until all categories are processed.
 | **README is empty or near-empty** | Same as "no README" — creation mode. |
 | **Codebase has no recognizable structure** | If `glob` finds only scattered files with no clear entry points or conventions, bypass the category system entirely. Present a minimal README suggestion directly and flag: "Codebase structure unclear — manual review recommended." Do not attempt the per-category approval loop.
 | **User rejects all categories** | Gracefully exit without writing anything: "No changes approved. README left as-is." |
-| **User gives feedback that contradicts codebase evidence** | Respect user's feedback but note the discrepancy: "Noted: user prefers X. Codebase evidence suggests Y. Applied user's preference." |
-| **Contradictory feedback across rounds** | If the user gives feedback in round 1 (e.g., "don't mention X") and then contradicts it in round 2 (e.g., "why didn't you mention X?"), respect the most recent feedback and flag the inconsistency: "Noted: you previously asked to omit X. Applying your latest request to include X." |
+| **User gives feedback that contradicts codebase evidence** | Respect user's feedback but note the discrepancy in the conversation transcript: "Noted: user prefers X. Codebase evidence suggests Y. Applied user's preference." Do NOT append notes to the README itself. |
+| **Contradictory feedback across rounds** | If the user gives feedback in round 1 (e.g., "don't mention X") and then contradicts it in round 2 (e.g., "why didn't you mention X?"), respect the most recent feedback and flag the inconsistency in the conversation transcript: "Noted: you previously asked to omit X. Applying your latest request to include X." Do NOT append notes to the README itself. |
 | **Write to README fails** | Report the error and present the full proposed README content in a conversation code block so the user can apply it manually. |
 | **README is `.org` format** | Preserve `.org` format. Read existing `README.org` and write updates back to `README.org` using Org-mode syntax. Never suggest converting to `.md`. |
 | **Very large README** | If the README exceeds ~5000 lines or ~50KB, summarize it rather than reading in full. Flag to the user: "README is very large; analysis may be incomplete." |
@@ -208,7 +208,7 @@ Continue until all categories are processed.
 | **Very large codebase** | Cap exploration at 30 files. Prioritize root configs, entry points, and a representative sample from each major directory. |
 | **Empty working directory** | If `glob` returns zero files (empty directory), report: "This directory appears to be empty. No README can be generated." Exit gracefully. |
 | **Exploration file unreadable** | If `glob` finds a file that is binary, unreadable, or permission-denied, skip it and continue exploration. Do not abort. |
-| **Symlinked README** | Follow the symlink and read the target file only if the target is within the working directory. If the symlink points outside the working directory, do NOT follow it; treat as missing README. Preserve the original filename when writing back. |
+| **Symlinked README** | Follow the symlink and read the target file only if the target is within the working directory. If the symlink points outside the working directory, do NOT follow it; treat as missing README. When writing back, if the symlink was not followed, create a new `README.md` (or `README.org`) alongside the symlink rather than overwriting the symlink itself. |
 | **Read-only README** | If the file system prevents writing, report the error and present the full proposed README content in a conversation code block. |
 | **README without extension** | Treat `README` (no extension) as equivalent to `README.md` for reading and writing. |
 | **Both `README.md` and `README.org` exist** | Use the tie-breaker heuristic from Section 2.1 (line count, then heading count). Note the presence of both to the user. If content differs significantly, ask which to update before proceeding. |
