@@ -39,8 +39,8 @@ When the user types `/reflect`, the agent:
    - The complete WIRED HTML template (inline CSS, layout structure).
 3. **Performs analysis** over the current conversation context.
 4. **Fills the template** with computed findings.
-5. **Writes the HTML** to a temporary file (`/tmp/reflect-<timestamp>.html`).
-6. **Opens the browser** via a `bash` tool call (`open /tmp/reflect-...html` on macOS, `xdg-open` on Linux).
+5. **Writes the HTML** to a temporary file (`/tmp/reflect-YYYY-MM-DD-HH-MM-SS.html`).
+6. **Opens the browser** via a `bash` tool call (`open /tmp/reflect-YYYY-MM-DD-HH-MM-SS.html` on macOS, `xdg-open /tmp/reflect-YYYY-MM-DD-HH-MM-SS.html` on Linux).
 
 ---
 
@@ -77,8 +77,8 @@ The agent scans the conversation for tool calls and reasoning patterns, then buc
 | **Misc** | User greetings, clarifying questions, plan updates, meta-discussion |
 
 Heuristics:
-- Count tool calls per category (quantitative).
-- Estimate "attention weight" by message length and reasoning depth (qualitative, layered on top of counts).
+- Estimate tool-call counts per category by heuristically scanning the conversation transcript for tool-usage markers (e.g., "`Write`", "`Edit`", "`websearch`"). This is an approximate count, not a structured log parse.
+- Layer qualitative "attention weight" on top by considering message length and reasoning depth.
 - Detect task boundaries: a new user request following a completion message; a shift from planning to execution marked by `TodoWrite` or plan presentation; a cluster of tool calls following a reasoning block.
 - Note task boundaries: user request → agent plan → execution → completion or abandonment.
 
@@ -151,6 +151,50 @@ This ensures the generated document is well-formed regardless of the content bei
 - Generous line height (`1.6`) for body text; tight leading (`1.1`) for display headlines.
 - Max content width `680px`, centered, with generous top/bottom padding (`64px`).
 
+#### Complete Placeholder List
+
+The embedded template uses these placeholders. Each is replaced with raw HTML fragments (not plain text) so the agent can inject structured content directly:
+
+| Placeholder | Content Type | Surrounding Markup |
+|-------------|--------------|-------------------|
+| `{{PROJECT_NAME}}` | Plain text string | Inside `<h1>` masthead |
+| `{{TIMESTAMP}}` | Plain text string | Inside `<time>` element |
+| `{{EXECUTIVE_SUMMARY}}` | HTML paragraph(s) | Inside `<section id="summary">` |
+| `{{ATTENTION_BREAKDOWN_BARS}}` | HTML `<div class="bar-row">` elements | Inside `<section id="attention">` |
+| `{{TASK_LOG_ROWS}}` | HTML `<tr>` elements | Inside `<tbody>` of task table |
+| `{{FRICTION_POINTS}}` | HTML `<li>` or `<article>` elements | Inside `<ol>` or `<section id="friction">` |
+| `{{KEY_DECISIONS}}` | HTML `<li>` elements | Inside `<ul>` or `<section id="decisions">` |
+
+If any placeholder is not filled, its entire surrounding `<section>` (or equivalent wrapper) is removed from the output.
+
+#### Bar Chart Markup Structure
+
+The attention breakdown uses nested `<div>` elements with inline percentage widths:
+
+```html
+<div class="bar-row">
+  <span class="bar-label">Coding</span>
+  <div class="bar-track">
+    <div class="bar-fill" style="width: 45%;"></div>
+  </div>
+  <span class="bar-value">45%</span>
+</div>
+```
+
+- `.bar-track`: full-width container with a subtle bottom border.
+- `.bar-fill`: ink-blue background (`#0A6ECC`), height `8px`, no radius.
+- `.bar-label` and `.bar-value`: monospace, `12px`, uppercase.
+
+#### Project Name Source
+
+The agent derives the project name from the current working directory basename (e.g., `skills` if in `/Users/whodevil/src/skills`). If the working directory is unavailable or is the home directory, fall back to `Unknown Project`.
+
+#### HTML Template Skeleton (Embedded in SKILL.md)
+
+The full template is a single `<!DOCTYPE html>` document with inline `<style>`. The agent copies this skeleton, replaces all `{{PLACEHOLDER}}` instances with computed HTML fragments, and writes the result to disk. The template includes all seven sections listed in Layout Structure, each wrapped in a `<section>` tag with a semantic `id`.
+
+Multi-line content (code snippets, error logs) is wrapped in `<pre><code>` blocks with the escaping rules applied.
+
 ---
 
 ## 4. Data Flow
@@ -188,7 +232,8 @@ Agent opens browser via bash tool
 | **Very short session** (< 5 messages) | Generate a minimal report: "Session too brief for meaningful analysis." Still styled, still opens browser. |
 | **No tool calls found** | Report says "No tool activity detected — session may be purely conversational." Categories show 100% Misc. |
 | **Browser open fails** | Report the file path in the conversation so the user can open it manually. |
-| **Template variable missing** | Leave placeholder text or omit section; never crash the HTML generation. |
+| **Unsupported OS (Windows)** | Skip the browser-open step entirely. Report the file path in the conversation so the user can open it manually. |
+| **Template variable missing** | Strip out the unfilled placeholder and its surrounding section wrapper (`<section>` or `<div>`); never crash the HTML generation. |
 | **`/tmp` not writable** | Attempt to write to the current working directory as fallback. If that also fails, output the raw HTML in a conversation message block so the user can save it manually. |
 
 ---
