@@ -10,7 +10,7 @@ This repository contains self-contained, prompt-based skills that extend an Open
 
 | Skill | Directory | Description |
 |-------|-----------|-------------|
-| **reflect** | [`reflect/`](reflect/) | Session retrospective analysis. When invoked (e.g., `/reflect`), the agent scans the current conversation, categorizes effort, detects friction points, and generates a polished HTML report styled after the *WIRED* design system. The report is written to `/tmp` and opened in your default browser. |
+| **reflect** | [`reflect/`](reflect/) | Session retrospective analysis. When invoked (e.g., `/reflect`), the agent scans the current conversation, categorizes effort, detects friction points, and generates a polished HTML report styled after the *WIRED* design system. The report is written to `docs/retro/` with a session-derived filename prefix and opened in your default browser. |
 
 ## Repository Structure
 
@@ -19,6 +19,7 @@ This repository contains self-contained, prompt-based skills that extend an Open
 ├── reflect/
 │   └── SKILL.md              # Reflect skill definition & embedded HTML template
 ├── docs/
+│   ├── retro/                # Generated retrospective reports
 │   └── superpowers/
 │       ├── specs/            # Design specifications
 │       └── plans/            # Implementation plans
