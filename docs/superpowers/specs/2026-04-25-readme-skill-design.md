@@ -24,6 +24,8 @@ The `/readme` skill is an OpenCode agent skill that deeply analyzes a codebase, 
 
 The skill is triggered by the user typing `/readme` or explicitly asking for README review/updates.
 
+**Approval granularity:** The user approves or rejects changes **per category**, not per individual issue. All issues within a category are approved or rejected as a batch. The user can provide feedback to refine a category before approving.
+
 ---
 
 ## 2. Architecture & Data Flow
@@ -67,7 +69,9 @@ User invokes /readme
 4. If both `README.md` and `README.org` exist, use this tie-breaker heuristic to pick the primary README to analyze:
    a. **Line count** — whichever file has more non-empty lines.
    b. If line count is within 10% of each other, compare **number of H2+ headings** — more structured sections wins.
-   c. Note the presence of both files to the user. If their content differs significantly (e.g., one describes features the other omits), ask the user which to update before proceeding.
+   c. Note the presence of both files to the user.
+   d. **Significant difference check:** If one file contains ≥2 major sections (e.g., "Features", "Installation", "API") that the other lacks entirely, prompt the user: "Both README.md and README.org exist. Which should I update?" Otherwise, proceed with the tie-breaker winner.
+5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). Treat these as equivalent to `README.md` / `README.org`.
 
 ### 2.2 Phase 2: Exploration
 
@@ -75,7 +79,7 @@ Systematically explore the codebase using `glob`, `read`, and `bash` tools. Prio
 
 1. **Root config files** — `package.json`, `pyproject.toml`, `Cargo.toml`, `pom.xml`, `build.gradle`, `Makefile`, etc.
 2. **Entry points** — main application files, CLI entry points, library exports.
-3. **Source directories** — representative files from each major directory (`src/`, `lib/`, `app/`, etc.).
+3. **Source directories** — representative files from each major directory. A "major directory" is any top-level directory (or immediate subdirectory of `src/`) that contains ≥5 source files or an entry-point marker (e.g., `__init__.py`, `index.js`, `main.py`, `Cargo.toml`).
 4. **Tests** — presence and structure of test files.
 5. **CI / DevOps** — `.github/workflows/`, `.gitlab-ci.yml`, `Dockerfile`, etc.
 6. **Documentation** — `docs/`, `AGENTS.md`, `CLAUDE.md`, changelogs.
@@ -87,17 +91,17 @@ Systematically explore the codebase using `glob`, `read`, and `bash` tools. Prio
 
 ### 2.3 Phase 3: Analysis
 
-Compare the Discovery claims against the Exploration findings and the best-practice guidelines from the Medium article ("README Rules: Structure, Style, and Pro Tips" by Shaun Fulton — https://medium.com/@fulton_shaun/readme-rules-structure-style-and-pro-tips-faea5eb5d252).
+Compare the Discovery claims against the Exploration findings and the hardcoded best-practice checklist from Section 4.
 
-Group discrepancies into these categories:
+Group discrepancies into these categories. Each category owns a distinct concern — no overlap:
 
-| Category | What to Check |
-|----------|---------------|
-| **Feature Coverage** | Does the README describe all major features? Are new features missing? Are described features still present? |
-| **Setup / Installation** | Are the install steps correct? Do they match the actual config files (e.g., `npm install` vs `pip install`)? Are missing steps identified? |
-| **Dependencies** | Are dependency lists accurate? Are versions correct? Are optional dependencies noted? |
-| **Structure / Formatting** | Is the README well-structured per best practices? Are sections missing (e.g., no "Getting Started")? Is formatting consistent? |
-| **API / Usage** | Are usage examples correct? Do they match the actual API? Are there missing examples for key functionality? |
+| Category | What to Check | Ownership Boundary |
+|----------|---------------|--------------------|
+| **Feature Coverage** | Does the README describe all major features? Are new features missing? Are described features still present? | Content-level: what the code *does*. Heuristic: exported functions, CLI commands, `package.json` scripts, HTTP endpoints, or other user-facing capabilities. |
+| **Setup / Installation** | Are the install steps correct? Do they match the actual config files (e.g., `npm install` vs `pip install`)? Are missing steps identified? | Content-level: how to *get the project running*. Includes dependency installation, build steps, and environment setup. |
+| **Dependencies** | Are dependency lists accurate? Are versions correct? Are optional dependencies noted? | Content-level: what the project *depends on*. Covers runtime and dev dependencies extracted from config files. |
+| **Structure / Formatting** | Is the README well-structured? Are sections missing (e.g., no "Getting Started")? Is formatting consistent? | *Meta-level:* presence and order of sections per the Section 4 checklist. Does NOT check the *accuracy* of content within sections (that belongs to Setup, API, etc.). |
+| **API / Usage** | Are usage examples correct? Do they match the actual API? Are there missing examples for key functionality? | Content-level: how to *use* the project after setup. Covers code examples, CLI flags, configuration options. |
 
 For each discrepancy, record:
 - **Issue:** What is wrong or missing
@@ -138,6 +142,7 @@ For each category, prompt the user with:
 2. Refine the category's findings based on the feedback.
 3. Re-present the refined category.
 4. The user can then Approve, Reject, Skip, or give more Feedback.
+5. **Iteration cap:** Maximum 2 feedback rounds per category. After the 2nd round of feedback, force a decision: present the final refined category and ask the user to Approve, Reject, or Skip. Do not allow further feedback.
 
 **If Approve:** Queue all proposed changes in this category for the final Application phase.
 
@@ -150,7 +155,7 @@ Continue until all categories are processed.
 ### 2.6 Phase 6: Application
 
 1. Compile all approved changes from all categories.
-2. **Conflict resolution:** If approved changes from different categories conflict (e.g., Structure/Formatting reorders a section while API/Usage adds content to it), resolve by preferring the **most specific** change. If the conflict cannot be resolved automatically, re-prompt the user with the conflicting changes before writing.
+2. **Conflict resolution:** If approved changes from different categories conflict, resolve by preferring the change with the **narrowest scope** (i.e., the one that touches the fewest lines or the smallest section). For example, if Structure/Formatting reorders a section while API/Usage adds a code example within that section, the API/Usage change wins because it is more targeted. If the conflict cannot be resolved by this rule, re-prompt the user with the conflicting changes before writing.
 3. If a README exists, apply the changes inline, preserving as much existing wording and structure as possible.
 4. If no README exists, create a new one from scratch using the approved content, structured according to best-practice guidelines.
 5. Write the result to `README.md` or `README.org` (matching the original format, or defaulting to `.md` if none existed).
@@ -171,13 +176,16 @@ Continue until all categories are processed.
 | **README is `.org` format** | Preserve `.org` format. Read existing `README.org` and write updates back to `README.org` using Org-mode syntax. Never suggest converting to `.md`. |
 | **Very large codebase** | Cap exploration at 30 files. Prioritize root configs, entry points, and a representative sample from each major directory. |
 | **Exploration file unreadable** | If `glob` finds a file that is binary, unreadable, or permission-denied, skip it and continue exploration. Do not abort. |
+| **Symlinked README** | Follow the symlink and read the target file. Preserve the original filename when writing back. |
+| **Read-only README** | If the file system prevents writing, report the error and present the full proposed README content in a conversation code block. |
+| **README without extension** | Treat `README` (no extension) as equivalent to `README.md` for reading and writing. |
 | **Both `README.md` and `README.org` exist** | Use the tie-breaker heuristic from Section 2.1 (line count, then heading count). Note the presence of both to the user. If content differs significantly, ask which to update before proceeding. |
 
 ---
 
 ## 4. Best-Practice Guidelines (Reference)
 
-Based on the Medium article ("README Rules: Structure, Style, and Pro Tips" by Shaun Fulton — https://medium.com/@fulton_shaun/readme-rules-structure-style-and-pro-tips-faea5eb5d252), a good README should include:
+The following checklist is hardcoded into the skill prompt. It is based on the Medium article "README Rules: Structure, Style, and Pro Tips" by Shaun Fulton, but the skill does NOT fetch the article at runtime. These rules are self-contained and deterministic:
 
 1. **Project Name & One-Liner** — Clear, descriptive title and a single-sentence summary.
 2. **Description** — What the project does and why it exists.
