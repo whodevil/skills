@@ -30,7 +30,7 @@ The skill is triggered by the user typing `/readme` or explicitly asking for REA
 
 ## 2. Architecture & Data Flow
 
-The skill follows a six-phase pipeline:
+**Working directory assumption:** The skill assumes the current working directory is the project root. If invoked from a subdirectory (e.g., `src/`), the agent should search upward for the nearest directory containing a `README.md`, `README.org`, or `.git` folder, and treat that as the project root. If none is found, use the current working directory and proceed normally.
 
 ```
 User invokes /readme
@@ -69,9 +69,10 @@ User invokes /readme
 4. If both `README.md` and `README.org` exist, use this tie-breaker heuristic to pick the primary README to analyze:
    a. **Line count** — whichever file has more non-empty lines.
    b. If line count is within 10% of each other, compare **number of H2+ headings** — more structured sections wins.
-   c. Note the presence of both files to the user.
-   d. **Significant difference check:** If one file contains ≥2 major sections (e.g., "Features", "Installation", "API") that the other lacks entirely, prompt the user: "Both README.md and README.org exist. Which should I update?" Otherwise, proceed with the tie-breaker winner.
-5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). Treat these as equivalent to `README.md` / `README.org`.
+   c. If still tied (identical line count and heading count), prefer `README.md` over `README.org` as the final fallback.
+   d. Note the presence of both files to the user.
+   e. **Significant difference check:** If one file contains ≥2 major sections (e.g., "Features", "Installation", "API") that the other lacks entirely, prompt the user: "Both README.md and README.org exist. Which should I update?" Otherwise, proceed with the tie-breaker winner.
+5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). Treat these as equivalent to `README.md` / `README.org`. If both a case-variant and standard-cased version exist (e.g., `Readme.md` and `README.md`), prefer the standard-cased `README.md` / `README.org` before applying the line-count heuristic.
 
 ### 2.2 Phase 2: Exploration
 
@@ -87,7 +88,7 @@ Systematically explore the codebase using `glob`, `read`, and `bash` tools. Prio
 
 **Exploration cap:** Max 30 files read in a single invocation to avoid excessive tool calls. Prioritize root configs, entry points, and a representative sample from each major directory.
 
-**Goal:** Build a factual model of what the codebase actually contains, how it works, and how to set it up.
+**Goal:** Build a factual model of what the codebase actually contains, how it works, and how to set it up. The model is an internal list of claims (e.g., "Project is a Python CLI tool", "Entry point is `src/main.py`", "Dependencies listed in `pyproject.toml`: requests, click") that the Analysis phase compares against the README claims.
 
 ### 2.3 Phase 3: Analysis
 
@@ -114,7 +115,9 @@ If no README exists, treat all categories as "missing" and generate suggestions 
 
 Present findings to the user **one category at a time**.
 
-For each category:
+**Empty categories:** If a category has zero issues, skip presenting it entirely. Do not say "no issues found." Only present categories with ≥1 issue.
+
+For each non-empty category:
 1. State the category name.
 2. Summarize how many issues were found.
 3. List each issue with:
@@ -150,6 +153,8 @@ For each category, prompt the user with:
 
 **If Skip:** Note the category as skipped and move on. (User can re-invoke `/readme` later to revisit.)
 
+**Unrecognized input:** If the user responds with something other than Approve, Reject, Skip, or Feedback (e.g., "maybe" or a random question), re-prompt with: "I didn't understand that. Please choose: Approve, Reject, Skip, or Feedback." Do not proceed until a valid choice is given.
+
 Continue until all categories are processed.
 
 ### 2.6 Phase 6: Application
@@ -175,6 +180,7 @@ Continue until all categories are processed.
 | **Write to README fails** | Report the error and present the full proposed README content in a conversation code block so the user can apply it manually. |
 | **README is `.org` format** | Preserve `.org` format. Read existing `README.org` and write updates back to `README.org` using Org-mode syntax. Never suggest converting to `.md`. |
 | **Very large codebase** | Cap exploration at 30 files. Prioritize root configs, entry points, and a representative sample from each major directory. |
+| **Empty working directory** | If `glob` returns zero files (empty directory), report: "This directory appears to be empty. No README can be generated." Exit gracefully. |
 | **Exploration file unreadable** | If `glob` finds a file that is binary, unreadable, or permission-denied, skip it and continue exploration. Do not abort. |
 | **Symlinked README** | Follow the symlink and read the target file. Preserve the original filename when writing back. |
 | **Read-only README** | If the file system prevents writing, report the error and present the full proposed README content in a conversation code block. |
@@ -214,6 +220,8 @@ Since this is a prompt-based skill (no executable code), testing is manual and s
 | **Test E: Empty/minimal README** | Verify the skill treats near-empty READMEs as creation scenarios. |
 | **Test F: Large codebase** | Verify exploration capping works — the skill reads representative files but doesn't hang on repos with hundreds of files. |
 | **Test G: Both `.md` and `.org` present** | Verify the skill handles the presence of both files gracefully. |
+| **Test H: Conflict resolution** | Verify that when two approved categories propose changes to the same section, the skill resolves the conflict by preferring the narrower-scope change. |
+| **Test I: Unreadable exploration file** | Verify the skill skips binary or unreadable files during exploration without aborting. |
 
 ---
 
