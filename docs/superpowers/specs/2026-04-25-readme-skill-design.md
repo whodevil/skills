@@ -66,13 +66,12 @@ User invokes /readme
    - Setup / installation instructions
    - Usage / API documentation
    - Contributing / testing info
-4. If both `README.md` and `README.org` exist, use this tie-breaker heuristic to pick the primary README to analyze:
-   a. **Line count** — whichever file has more non-empty lines.
-   b. If line count is within 10% of each other, compare **number of H2+ headings** — more structured sections wins.
-   c. If still tied (identical line count and heading count), prefer `README.md` over `README.org` as the final fallback.
-   d. **Note the presence of both files** to the user after the tie-breaker winner is selected, unless the significant difference check (step e) triggers a prompt.
-   e. **Significant difference check:** Detect "major sections" by counting H2+ headings (e.g., `## Features`, `## Installation`). If one file contains ≥2 H2+ heading topics that the other lacks entirely, prompt the user: "Both README.md and README.org exist. Which should I update?" Otherwise, proceed with the tie-breaker winner.
-5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). If `README` (no extension) is found, treat it as a valid README file. When writing back, preserve the exact original filename (e.g., if the original was `README`, write back to `README`; do not rename to `README.md`). If both a case-variant and standard-cased version exist (e.g., `Readme.md` and `README.md`), prefer the standard-cased `README.md` / `README.org` before applying the line-count heuristic.
+4. If both `README.md` and `README.org` exist:
+   a. Read both files.
+   b. **Prompt the user:** "Both README.md and README.org exist. Which would you like to continue with?"
+   c. **Merge attempt:** Regardless of which the user chooses, build a merged model of claims by combining the contents of both files. If both files describe the same section differently, flag the discrepancy and use the more detailed or more recently updated version as the default.
+   d. Record the user's chosen primary file for write-back.
+5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). If `README` (no extension) is found, treat it as a valid README file. When writing back, preserve the exact original filename (e.g., if the original was `README`, write back to `README`; do not rename to `README.md`). If both a case-variant and standard-cased version exist (e.g., `Readme.md` and `README.md`), prefer the standard-cased `README.md` / `README.org`.
 
 ### 2.2 Phase 2: Exploration
 
@@ -184,10 +183,11 @@ Continue until all categories are processed.
    a. **Content beats structure** — A change that adds or corrects content within a section (e.g., API/Usage adds an example) takes precedence over a change that moves or reorders that section (e.g., Structure/Formatting reorders it).
    b. **Specific beats general** — A change targeting a subsection takes precedence over a change targeting the whole document.
    c. If neither rule resolves the conflict, re-prompt the user with the conflicting changes before writing. This mid-application re-prompt is a separate forced decision and is NOT subject to the 2-round feedback cap from Phase 5.
-3. If a README exists, apply the changes inline, preserving as much existing wording and structure as possible.
+3. If a README exists (or both exist), apply the changes inline to the user's chosen primary file, preserving as much existing wording and structure as possible. The merged model from Discovery ensures content from both files is considered.
 4. If no README exists, create a new one from scratch using the approved content, structured according to best-practice guidelines.
-5. Write the result back to the exact original filename (e.g., `README.md`, `README.org`, or `README`). If no README existed, default to `README.md`.
-6. Confirm to the user: "README updated with X approved changes from Y categories."
+5. Write the result back to the user's chosen primary filename. If no README existed, default to `README.md`.
+6. If both `README.md` and `README.org` existed, confirm: "README updated with X approved changes from Y categories. [Primary file] was updated; [other file] was left as-is."
+7. If only one README existed, confirm: "README updated with X approved changes from Y categories."
 
 ---
 
@@ -211,7 +211,7 @@ Continue until all categories are processed.
 | **Symlinked README** | Follow the symlink and read the target file only if the target is within the working directory. If the symlink points outside the working directory, do NOT follow it; treat as missing README. When writing back, if the symlink was not followed, create a new `README.md` (or `README.org`) alongside the symlink rather than overwriting the symlink itself. |
 | **Read-only README** | If the file system prevents writing, report the error and present the full proposed README content in a conversation code block. |
 | **README without extension** | Treat `README` (no extension) as equivalent to `README.md` for reading and writing. |
-| **Both `README.md` and `README.org` exist** | Use the tie-breaker heuristic from Section 2.1 (line count, then heading count). Note the presence of both to the user. If content differs significantly, ask which to update before proceeding. |
+| **Both `README.md` and `README.org` exist** | Read both files. Prompt the user to choose which to continue with. Build a merged model of claims from both files, flagging discrepancies. Write updates back to the user's chosen primary file only. |
 | **Git repo detected** | If `.git` is present, create a backup copy of the original README before writing (e.g., `README.md.bak.<timestamp>`). This allows the user to revert if needed. |
 | **README references assets** | Preserve all image paths, relative links, and asset references in the existing README during updates. Do not modify asset paths unless the user explicitly approves a change that affects them. |
 | **Partial analysis** | If the 30-file exploration cap is reached, flag to the user: "Analysis capped at 30 files — some areas of the codebase may not have been fully explored." |
@@ -249,7 +249,7 @@ Since this is a prompt-based skill (no executable code), testing is manual and s
 | **Test D: User feedback loop** | Verify the approval handler correctly processes Approve, Reject, Skip, and Feedback responses, and refines categories when feedback is given. |
 | **Test E: Empty/minimal README** | Verify the skill treats near-empty READMEs as creation scenarios. |
 | **Test F: Large codebase** | Verify exploration capping works — the skill reads representative files but doesn't hang on repos with hundreds of files. |
-| **Test G: Both `.md` and `.org` present** | Verify the skill handles the presence of both files gracefully. |
+| **Test G: Both `.md` and `.org` present** | Verify the skill prompts the user to choose a primary file, merges claims from both, and writes back to the chosen file only. |
 | **Test H: Conflict resolution** | Verify that when two approved categories propose changes to the same section, the skill resolves the conflict by preferring the narrower-scope change. |
 | **Test I: Unreadable exploration file** | Verify the skill skips binary or unreadable files during exploration without aborting. |
 
