@@ -77,8 +77,9 @@ The agent scans the conversation for tool calls and reasoning patterns, then buc
 | **Misc** | User greetings, clarifying questions, plan updates, meta-discussion |
 
 Heuristics:
-- Count tool calls per category.
-- Estimate "attention weight" by message length and reasoning depth (qualitative, not quantitative).
+- Count tool calls per category (quantitative).
+- Estimate "attention weight" by message length and reasoning depth (qualitative, layered on top of counts).
+- Detect task boundaries: a new user request following a completion message; a shift from planning to execution marked by `TodoWrite` or plan presentation; a cluster of tool calls following a reasoning block.
 - Note task boundaries: user request → agent plan → execution → completion or abandonment.
 
 #### Phase 2: Detect Friction Points
@@ -127,11 +128,21 @@ The HTML is a single-column, broadsheet-dense layout:
 
 1. **Masthead**: Session title ("Session Retrospective"), project name, timestamp. Kicker in mono above.
 2. **Executive Summary**: 3–4 sentence overview. Large serif text.
-3. **Attention Breakdown**: CSS-based horizontal bar chart showing category percentages. Mono labels, ink-blue bars.
+3. **Attention Breakdown**: CSS-based horizontal bar chart showing estimated distribution derived from tool-call counts per category. Labeled as "Estimated Attention Distribution" — not precise percentages, but proportional representation. Mono labels, ink-blue bars.
 4. **Task Log**: Table of tasks (completed vs. abandoned), with effort estimates and outcomes.
 5. **Friction Points & Recommendations**: Numbered list. Each item has a kicker severity badge (HIGH, MEDIUM, LOW), a headline, evidence, and a recommended fix.
 6. **Key Decisions**: Bullet list of major architectural or technical choices, with rationale.
 7. **Footer**: Generated-by line, mono timestamp.
+
+#### HTML Escaping Requirement
+
+When injecting conversation content (tool outputs, error messages, file paths, code snippets) into the template, the agent must escape these characters to prevent broken HTML:
+- `&` → `&amp;`
+- `<` → `&lt;`
+- `>` → `&gt;`
+- `"` → `&quot;`
+
+This ensures the generated document is well-formed regardless of the content being analyzed.
 
 #### CSS Rules
 
@@ -178,6 +189,7 @@ Agent opens browser via bash tool
 | **No tool calls found** | Report says "No tool activity detected — session may be purely conversational." Categories show 100% Misc. |
 | **Browser open fails** | Report the file path in the conversation so the user can open it manually. |
 | **Template variable missing** | Leave placeholder text or omit section; never crash the HTML generation. |
+| **`/tmp` not writable** | Attempt to write to the current working directory as fallback. If that also fails, output the raw HTML in a conversation message block so the user can save it manually. |
 
 ---
 
@@ -228,7 +240,8 @@ This location is ephemeral by design — the report is meant for immediate revie
 
 - **None.** The skill is entirely self-contained.
 - The agent relies on its own conversation context (already loaded).
-- Browser opening uses standard OS commands (`open` / `xdg-open`) available on all macOS/Linux systems.
+- Browser opening uses standard OS commands (`open` for macOS, `xdg-open` for Linux). **Windows is out of scope** for this version.
+- Placeholder convention in the embedded template: use `{{SECTION_NAME}}` (e.g., `{{EXECUTIVE_SUMMARY}}`, `{{TASK_LOG_ROWS}}`) so the agent can reliably detect and replace sections. If a placeholder is not filled, it is stripped out during generation.
 
 ---
 
