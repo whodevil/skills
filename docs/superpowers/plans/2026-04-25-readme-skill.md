@@ -86,7 +86,7 @@ Cover:
    - Tests: max 3
    - CI/DevOps: max 2
    - Docs/Metadata: max 2 combined
-5. Large file handling (>2000 lines or >20KB → read first 100 lines only)
+5. Large file handling (>2000 lines or >20KB → read first 100 lines or a representative section)
 6. Context protection: if total content exceeds LLM context window, prioritize most recent/important files and summarize the rest
 7. Unreadable file handling (skip binaries/permission-denied)
 8. Factual model schema (Claim, Evidence, Type)
@@ -210,11 +210,12 @@ Cover all edge cases from the spec:
 - Binary/unreadable README → "README file found but cannot be read. Please check permissions or encoding." Treat as missing but warn not to overwrite without investigating
 - Empty working directory → "This directory appears to be empty. No README can be generated." Exit gracefully.
 - Exploration file unreadable (binary, permission-denied) → skip, continue exploration
-- Symlinked README → follow only if target within working directory. If not followed, create new `README.md`/`README.org` alongside symlink rather than overwriting symlink itself
+- Symlinked README → follow only if target within working directory. If symlink points outside working directory, do NOT follow it; treat as missing README. When writing back, if symlink was not followed, create new `README.md`/`README.org` alongside symlink rather than overwriting symlink itself
 - Read-only README → report error, present content
 - README without extension → preserve exact filename
+- README is `.org` format (only one exists) → preserve Org-mode syntax, never suggest `.md` conversion
 - Both `.md` and `.org` exist → prompt user, merge, write to chosen file
-- Git repo detected → create backup before writing
+- Git repo detected → create backup before writing (e.g., `README.md.bak.<timestamp>`)
 - README references assets → preserve paths
 - Partial analysis (30-file cap reached) → flag: "Analysis capped at 30 files — some areas of the codebase may not have been fully explored."
 - Loose source files in root → read up to 3
