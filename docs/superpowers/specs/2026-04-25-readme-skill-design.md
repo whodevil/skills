@@ -42,13 +42,17 @@ User invokes /readme
 [Phase 2: Exploration] → Deep codebase analysis
     |
     v
+Is codebase structure recognizable?
+    | No → [Bypass] → Present minimal README suggestion → End
+    | Yes
+    v
 [Phase 3: Analysis] → Compare reality vs. README + best practices
     |
     v
 [Phase 4: Presentation] → Present each category's findings
     |
     v
-[Phase 5: Approval Loop] → User: Approve / Reject / Skip / Feedback
+[Phase 5: Approval Loop] → User: Approve / Reject / Skip / Feedback / Quit
     |
     v
 [Phase 6: Application] → Compile approved changes → Write README
@@ -69,7 +73,7 @@ User invokes /readme
 4. If both `README.md` and `README.org` exist:
    a. Read both files.
    b. **Prompt the user:** "Both README.md and README.org exist. Which would you like to continue with?"
-   c. **Merge attempt:** Regardless of which the user chooses, build a merged model of claims by combining the contents of both files. If both files describe the same section differently, flag the discrepancy and use the more detailed or more recently updated version as the default.
+   c. **Merge attempt:** Regardless of which the user chooses, build a merged model of claims by combining the contents of both files. If both files describe the same section differently, flag the discrepancy and use the more detailed version as the default. Do NOT rely on file mtime.
    d. Record the user's chosen primary file for write-back.
 5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). If `README` (no extension) is found, treat it as a valid README file. When writing back, preserve the exact original filename (e.g., if the original was `README`, write back to `README`; do not rename to `README.md`). If both a case-variant and standard-cased version exist (e.g., `Readme.md` and `README.md`), prefer the standard-cased `README.md` / `README.org`.
 
@@ -112,6 +116,8 @@ Compare the Discovery claims against the Exploration findings and the hardcoded 
 
 Group discrepancies into these categories. Each category owns a distinct concern in *analysis* — no overlap during fact-finding. However, during *application*, approved changes from different categories may target the same README section (e.g., Structure/Formatting may reorder a section while API/Usage adds content within it). This is expected and handled by the conflict-resolution rules in Phase 6.
 
+**Deduplication rule:** If the same underlying discrepancy could be flagged by multiple categories (e.g., a missing CLI feature noted in both Feature Coverage and API/Usage), emit it only in the **most specific** category. In this example, API/Usage is more specific than Feature Coverage, so the issue belongs in API/Usage only.
+
 | Category | What to Check | Ownership Boundary |
 |----------|---------------|--------------------|
 | **Feature Coverage** | Does the README describe all major features? Are new features missing? Are described features still present? | Content-level: what the code *does*. Heuristic: exported functions, CLI commands, `package.json` scripts, HTTP endpoints, or other user-facing capabilities. |
@@ -125,7 +131,7 @@ For each discrepancy, record:
 - **Evidence:** Concrete file paths, code snippets, or directory listings from the codebase
 - **Proposed change:** Specific text or section to add, update, or remove
 
-If no README exists, treat all categories as "missing" and generate suggestions from scratch using the codebase model. However, if the codebase model contains no evidence for a particular category (e.g., no dependencies found, no CI config), that category may still have zero issues and should be skipped per the empty-category rule in Phase 4.
+If no README exists, treat all categories as "missing" and generate suggestions from scratch using the codebase model. Generate suggestions for every category that has any discoverable evidence. Only skip a category if the codebase model contains absolutely no evidence for it (e.g., no dependencies found AND no config files AND no package managers). This is the only scenario where an empty category should be skipped in creation mode.
 
 ### 2.4 Phase 4: Presentation
 
@@ -140,7 +146,7 @@ For each non-empty category:
    - The current README claim (if any)
    - The evidence from the codebase
    - The proposed change
-4. Ask the user for a response.
+4. Ask the user for a response. Valid responses are defined in Phase 5 (Approve, Reject, Skip, Feedback, Quit).
 
 ### 2.5 Phase 5: Approval Loop
 
@@ -162,7 +168,7 @@ For each category, prompt the user with:
 2. Refine the category's findings based on the feedback.
 3. Re-present the refined category.
 4. The user can then Approve, Reject, Skip, or give more Feedback.
-5. **Iteration cap:** Maximum 2 feedback rounds per category. After the 2nd round of feedback, force a decision: present the final refined category and ask the user to Approve, Reject, or Skip. Do not allow further feedback.
+5. **Iteration cap:** Maximum 2 feedback rounds per category. One feedback round = one instance of the user providing feedback text. After the 2nd round of feedback, force a decision: present the final refined category and ask the user to Approve, Reject, or Skip. Do not allow further feedback.
 
 **If Approve:** Queue all proposed changes in this category for the final Application phase.
 
@@ -172,7 +178,7 @@ For each category, prompt the user with:
 
 **If Quit:** Immediately discard all pending and future changes, exit the loop, and report: "Exited without applying any changes. README left as-is."
 
-**Unrecognized input:** If the user responds with something other than Approve, Reject, Skip, or Feedback (e.g., "maybe" or a random question), re-prompt with: "I didn't understand that. Please choose: Approve, Reject, Skip, or Feedback." Do not proceed until a valid choice is given.
+**Unrecognized input:** If the user responds with something other than Approve, Reject, Skip, Feedback, or Quit (e.g., "maybe" or a random question), re-prompt with: "I didn't understand that. Please choose: Approve, Reject, Skip, Feedback, or Quit." Do not proceed until a valid choice is given.
 
 Continue until all categories are processed.
 
@@ -182,8 +188,12 @@ Continue until all categories are processed.
 2. **Conflict resolution:** If approved changes from different categories conflict, apply this prompt-friendly heuristic in order:
    a. **Content beats structure** — A change that adds or corrects content within a section (e.g., API/Usage adds an example) takes precedence over a change that moves or reorders that section (e.g., Structure/Formatting reorders it).
    b. **Specific beats general** — A change targeting a subsection takes precedence over a change targeting the whole document.
-   c. If neither rule resolves the conflict, re-prompt the user with the conflicting changes before writing. This mid-application re-prompt is a separate forced decision and is NOT subject to the 2-round feedback cap from Phase 5.
-3. If a README exists (or both exist), apply the changes inline to the user's chosen primary file, preserving as much existing wording and structure as possible. The merged model from Discovery ensures content from both files is considered.
+   c. If neither rule resolves the conflict, re-prompt the user with the conflicting changes and offer these options:
+      - **Choose Change A** — apply the first conflicting change
+      - **Choose Change B** — apply the second conflicting change
+      - **Reject Both** — discard both conflicting changes
+      This mid-application re-prompt is a separate forced decision and is NOT subject to the 2-round feedback cap from Phase 5.
+3. If a README exists (or both exist), apply the changes inline to the user's chosen primary file, preserving as much existing wording and structure as possible. If both files existed, the merged model from Discovery ensures content from both is considered.
 4. If no README exists, create a new one from scratch using the approved content, structured according to best-practice guidelines.
 5. Write the result back to the user's chosen primary filename. If no README existed, default to `README.md`.
 6. If both `README.md` and `README.org` existed, confirm: "README updated with X approved changes from Y categories. [Primary file] was updated; [other file] was left as-is."
