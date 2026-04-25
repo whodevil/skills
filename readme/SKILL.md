@@ -225,7 +225,6 @@ Continue until all categories are processed.
 | **Read-only README** | If the file system prevents writing, report the error and present the full proposed README content in a conversation code block. |
 | **README without extension** | Treat `README` (no extension) as equivalent to `README.md` for reading and writing. |
 | **Both `README.md` and `README.org` exist** | Read both files. Prompt the user to choose which to continue with. Build a merged model of claims from both files, flagging discrepancies. Write updates back to the user's chosen primary file only. |
-| **Git repo detected** | If `.git` is present, create a backup copy of the original README before writing (e.g., `README.md.bak.<timestamp>`). This allows the user to revert if needed. |
 | **README references assets** | Preserve all image paths, relative links, and asset references in the existing README during updates. Do not modify asset paths unless the user explicitly approves a change that affects them. |
 | **Partial analysis** | If the 30-file exploration cap is reached, flag to the user: "Analysis capped at 30 files — some areas of the codebase may not have been fully explored." |
 | **Loose source files in root** | If source files exist in the project root but not within a "major directory," read a representative sample of them (up to 3 files) as part of the exploration. |
