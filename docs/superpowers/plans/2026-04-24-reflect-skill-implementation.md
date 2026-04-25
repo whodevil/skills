@@ -545,10 +545,10 @@ When invoked, follow this sequence:
 5. **Get timestamp** via `bash` tool: `date +%Y-%m-%d-%H-%M-%S`
 6. **Derive prefix** from session topic or project name (e.g., `skills`, `retro-skill`).
 7. **Ensure directory exists** via `bash` tool: `mkdir -p docs/retro`
-8. **Write the HTML** to `docs/retro/<prefix>-<timestamp>.html`
+8. **Write the HTML** to `docs/retro/<timestamp>-<prefix>.html`
 9. **Open the browser** via `bash` tool:
-   - macOS: `open docs/retro/<prefix>-<timestamp>.html`
-   - Linux: `xdg-open docs/retro/<prefix>-<timestamp>.html`
+   - macOS: `open docs/retro/<timestamp>-<prefix>.html`
+   - Linux: `xdg-open docs/retro/<timestamp>-<prefix>.html`
    - Windows: **out of scope** — report the file path to the user instead
 ```
 
@@ -815,7 +815,7 @@ Copy the template from the skill, fill with dummy data, and verify it renders co
 ```bash
 # Create a test HTML file with sample data
 mkdir -p docs/retro
-cat > docs/retro/test-render-2026-04-25-00-00-00.html << 'EOF'
+cat > docs/retro/2026-04-25-00-00-00-test-render.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -986,7 +986,7 @@ cat > docs/retro/test-render-2026-04-25-00-00-00.html << 'EOF'
 EOF
 
 # Open in browser
-open docs/retro/test-render-2026-04-25-00-00-00.html
+open docs/retro/2026-04-25-00-00-00-test-render.html
 ```
 
 - [ ] **Step 3: Final commit**

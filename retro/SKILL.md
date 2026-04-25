@@ -358,13 +358,13 @@ When invoked, follow this sequence:
 3. **Copy the template** and replace all `{{PLACEHOLDER}}` markers with fragments.
 4. **Strip empty sections** according to the stripping rule.
 5. **Get timestamp** via `bash` tool: `date +%Y-%m-%d-%H-%M-%S`
-6. **Write the HTML** to `docs/retro/<prefix>-<timestamp>.html`
+6. **Write the HTML** to `docs/retro/<timestamp>-<prefix>.html`
 7. **Open the browser** via `bash` tool:
-   - macOS: `open docs/retro/<prefix>-<timestamp>.html`
-   - Linux: `xdg-open docs/retro/<prefix>-<timestamp>.html`
+   - macOS: `open docs/retro/<timestamp>-<prefix>.html`
+   - Linux: `xdg-open docs/retro/<timestamp>-<prefix>.html`
    - Windows: **out of scope** — report the file path to the user instead
 
-**Filename prefix:** Derive a short, relevant prefix from the session content. Use the project name (e.g., `skills`), or if the session has a clear primary topic, use a 2–4 word kebab-case summary (e.g., `retro-skill`, `auth-bug-fix`, `api-refactor`). Fallback to `session` if no clear topic emerges. The full filename format is: `<prefix>-YYYY-MM-DD-HH-MM-SS.html`.
+**Filename prefix:** Derive a short, relevant prefix from the session content. Use the project name (e.g., `skills`), or if the session has a clear primary topic, use a 2–4 word kebab-case summary (e.g., `retro-skill`, `auth-bug-fix`, `api-refactor`). Fallback to `session` if no clear topic emerges. The full filename format is: `YYYY-MM-DD-HH-MM-SS-<prefix>.html`.
 
 ## Error Handling
 
