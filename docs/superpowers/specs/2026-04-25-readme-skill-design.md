@@ -64,7 +64,10 @@ User invokes /readme
    - Setup / installation instructions
    - Usage / API documentation
    - Contributing / testing info
-4. If both `README.md` and `README.org` exist, prefer the one that is larger / more complete, but note the presence of both to the user.
+4. If both `README.md` and `README.org` exist, use this tie-breaker heuristic to pick the primary README to analyze:
+   a. **Line count** — whichever file has more non-empty lines.
+   b. If line count is within 10% of each other, compare **number of H2+ headings** — more structured sections wins.
+   c. Note the presence of both files to the user. If their content differs significantly (e.g., one describes features the other omits), ask the user which to update before proceeding.
 
 ### 2.2 Phase 2: Exploration
 
@@ -84,7 +87,7 @@ Systematically explore the codebase using `glob`, `read`, and `bash` tools. Prio
 
 ### 2.3 Phase 3: Analysis
 
-Compare the Discovery claims against the Exploration findings and the best-practice guidelines from the Medium article.
+Compare the Discovery claims against the Exploration findings and the best-practice guidelines from the Medium article ("README Rules: Structure, Style, and Pro Tips" by Shaun Fulton — https://medium.com/@fulton_shaun/readme-rules-structure-style-and-pro-tips-faea5eb5d252).
 
 Group discrepancies into these categories:
 
@@ -147,10 +150,11 @@ Continue until all categories are processed.
 ### 2.6 Phase 6: Application
 
 1. Compile all approved changes from all categories.
-2. If a README exists, apply the changes inline, preserving as much existing wording and structure as possible.
-3. If no README exists, create a new one from scratch using the approved content, structured according to best-practice guidelines.
-4. Write the result to `README.md` or `README.org` (matching the original format, or defaulting to `.md` if none existed).
-5. Confirm to the user: "README updated with X approved changes from Y categories."
+2. **Conflict resolution:** If approved changes from different categories conflict (e.g., Structure/Formatting reorders a section while API/Usage adds content to it), resolve by preferring the **most specific** change. If the conflict cannot be resolved automatically, re-prompt the user with the conflicting changes before writing.
+3. If a README exists, apply the changes inline, preserving as much existing wording and structure as possible.
+4. If no README exists, create a new one from scratch using the approved content, structured according to best-practice guidelines.
+5. Write the result to `README.md` or `README.org` (matching the original format, or defaulting to `.md` if none existed).
+6. Confirm to the user: "README updated with X approved changes from Y categories."
 
 ---
 
@@ -166,13 +170,14 @@ Continue until all categories are processed.
 | **Write to README fails** | Report the error and present the full proposed README content in a conversation code block so the user can apply it manually. |
 | **README is `.org` format** | Preserve `.org` format. Read existing `README.org` and write updates back to `README.org` using Org-mode syntax. Never suggest converting to `.md`. |
 | **Very large codebase** | Cap exploration at 30 files. Prioritize root configs, entry points, and a representative sample from each major directory. |
-| **Both `README.md` and `README.org` exist** | Prefer the larger/more complete one. Note the presence of both to the user and ask which to update if they differ significantly. |
+| **Exploration file unreadable** | If `glob` finds a file that is binary, unreadable, or permission-denied, skip it and continue exploration. Do not abort. |
+| **Both `README.md` and `README.org` exist** | Use the tie-breaker heuristic from Section 2.1 (line count, then heading count). Note the presence of both to the user. If content differs significantly, ask which to update before proceeding. |
 
 ---
 
 ## 4. Best-Practice Guidelines (Reference)
 
-Based on the Medium article, a good README should include:
+Based on the Medium article ("README Rules: Structure, Style, and Pro Tips" by Shaun Fulton — https://medium.com/@fulton_shaun/readme-rules-structure-style-and-pro-tips-faea5eb5d252), a good README should include:
 
 1. **Project Name & One-Liner** — Clear, descriptive title and a single-sentence summary.
 2. **Description** — What the project does and why it exists.
