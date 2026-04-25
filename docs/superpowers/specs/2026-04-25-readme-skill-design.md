@@ -71,7 +71,7 @@ User invokes /readme
    b. If line count is within 10% of each other, compare **number of H2+ headings** — more structured sections wins.
    c. If still tied (identical line count and heading count), prefer `README.md` over `README.org` as the final fallback.
    d. Note the presence of both files to the user.
-   e. **Significant difference check:** If one file contains ≥2 major sections (e.g., "Features", "Installation", "API") that the other lacks entirely, prompt the user: "Both README.md and README.org exist. Which should I update?" Otherwise, proceed with the tie-breaker winner.
+   e. **Significant difference check:** Detect "major sections" by counting H2+ headings (e.g., `## Features`, `## Installation`). If one file contains ≥2 H2+ heading topics that the other lacks entirely, prompt the user: "Both README.md and README.org exist. Which should I update?" Otherwise, proceed with the tie-breaker winner.
 5. Also check for plain `README` (no extension) or `Readme.md` / `Readme.org` (case variants). If `README` (no extension) is found, treat it as a valid README file. When writing back, preserve the exact original filename (e.g., if the original was `README`, write back to `README`; do not rename to `README.md`). If both a case-variant and standard-cased version exist (e.g., `Readme.md` and `README.md`), prefer the standard-cased `README.md` / `README.org` before applying the line-count heuristic.
 
 ### 2.2 Phase 2: Exploration
@@ -111,7 +111,7 @@ The Analysis phase compares these claims against the README claims.
 
 Compare the Discovery claims against the Exploration findings and the hardcoded best-practice checklist from Section 4.
 
-Group discrepancies into these categories. Each category owns a distinct concern — no overlap:
+Group discrepancies into these categories. Each category owns a distinct concern in *analysis* — no overlap during fact-finding. However, during *application*, approved changes from different categories may target the same README section (e.g., Structure/Formatting may reorder a section while API/Usage adds content within it). This is expected and handled by the conflict-resolution rules in Phase 6.
 
 | Category | What to Check | Ownership Boundary |
 |----------|---------------|--------------------|
@@ -183,7 +183,7 @@ Continue until all categories are processed.
 2. **Conflict resolution:** If approved changes from different categories conflict, apply this prompt-friendly heuristic in order:
    a. **Content beats structure** — A change that adds or corrects content within a section (e.g., API/Usage adds an example) takes precedence over a change that moves or reorders that section (e.g., Structure/Formatting reorders it).
    b. **Specific beats general** — A change targeting a subsection takes precedence over a change targeting the whole document.
-   c. If neither rule resolves the conflict, re-prompt the user with the conflicting changes before writing.
+   c. If neither rule resolves the conflict, re-prompt the user with the conflicting changes before writing. This mid-application re-prompt is a separate forced decision and is NOT subject to the 2-round feedback cap from Phase 5.
 3. If a README exists, apply the changes inline, preserving as much existing wording and structure as possible.
 4. If no README exists, create a new one from scratch using the approved content, structured according to best-practice guidelines.
 5. Write the result back to the exact original filename (e.g., `README.md`, `README.org`, or `README`). If no README existed, default to `README.md`.
@@ -197,20 +197,25 @@ Continue until all categories are processed.
 |----------|----------|
 | **No README exists** | Treat as creation mode. Use best-practice template as structural baseline. Present all sections as "needs creation." |
 | **README is empty or near-empty** | Same as "no README" — creation mode. |
-| **Codebase has no recognizable structure** | If `glob` finds only scattered files with no clear entry points or conventions, present a minimal README suggestion and flag: "Codebase structure unclear — manual review recommended." |
+| **Codebase has no recognizable structure** | If `glob` finds only scattered files with no clear entry points or conventions, bypass the category system entirely. Present a minimal README suggestion directly and flag: "Codebase structure unclear — manual review recommended." Do not attempt the per-category approval loop.
 | **User rejects all categories** | Gracefully exit without writing anything: "No changes approved. README left as-is." |
 | **User gives feedback that contradicts codebase evidence** | Respect user's feedback but note the discrepancy: "Noted: user prefers X. Codebase evidence suggests Y. Applied user's preference." |
 | **Contradictory feedback across rounds** | If the user gives feedback in round 1 (e.g., "don't mention X") and then contradicts it in round 2 (e.g., "why didn't you mention X?"), respect the most recent feedback and flag the inconsistency: "Noted: you previously asked to omit X. Applying your latest request to include X." |
 | **Write to README fails** | Report the error and present the full proposed README content in a conversation code block so the user can apply it manually. |
 | **README is `.org` format** | Preserve `.org` format. Read existing `README.org` and write updates back to `README.org` using Org-mode syntax. Never suggest converting to `.md`. |
 | **Very large README** | If the README exceeds ~5000 lines or ~50KB, summarize it rather than reading in full. Flag to the user: "README is very large; analysis may be incomplete." |
+| **Binary or unreadable README** | If `README.md`/`README.org` is binary, unreadable, or permission-denied, report: "README file found but cannot be read. Please check permissions or encoding." Treat as missing README (creation mode) but warn the user not to overwrite without investigating. |
 | **Very large codebase** | Cap exploration at 30 files. Prioritize root configs, entry points, and a representative sample from each major directory. |
 | **Empty working directory** | If `glob` returns zero files (empty directory), report: "This directory appears to be empty. No README can be generated." Exit gracefully. |
 | **Exploration file unreadable** | If `glob` finds a file that is binary, unreadable, or permission-denied, skip it and continue exploration. Do not abort. |
-| **Symlinked README** | Follow the symlink and read the target file. Preserve the original filename when writing back. |
+| **Symlinked README** | Follow the symlink and read the target file only if the target is within the working directory. If the symlink points outside the working directory, do NOT follow it; treat as missing README. Preserve the original filename when writing back. |
 | **Read-only README** | If the file system prevents writing, report the error and present the full proposed README content in a conversation code block. |
 | **README without extension** | Treat `README` (no extension) as equivalent to `README.md` for reading and writing. |
 | **Both `README.md` and `README.org` exist** | Use the tie-breaker heuristic from Section 2.1 (line count, then heading count). Note the presence of both to the user. If content differs significantly, ask which to update before proceeding. |
+| **Git repo detected** | If `.git` is present, create a backup copy of the original README before writing (e.g., `README.md.bak.<timestamp>`). This allows the user to revert if needed. |
+| **README references assets** | Preserve all image paths, relative links, and asset references in the existing README during updates. Do not modify asset paths unless the user explicitly approves a change that affects them. |
+| **Partial analysis** | If the 30-file exploration cap is reached, flag to the user: "Analysis capped at 30 files — some areas of the codebase may not have been fully explored." |
+| **Loose source files in root** | If source files exist in the project root but not within a "major directory," read a representative sample of them (up to 3 files) as part of the exploration. |
 
 ---
 
