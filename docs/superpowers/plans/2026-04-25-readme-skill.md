@@ -50,7 +50,7 @@ git commit -m "feat: scaffold /readme skill with frontmatter and overview"
 - [ ] **Step 1: Write Discovery phase instructions**
 
 Cover:
-1. **Working directory root detection:** If invoked from a subdirectory, search upward for nearest directory containing `README.md`, `README.org`, or `.git` folder. Treat that as project root.
+1. **Working directory root detection:** If invoked from a subdirectory, search upward for nearest directory containing `README.md`, `README.org`, or `.git` folder. Treat that as project root. If none found, use current working directory and proceed normally.
 2. `glob` for README files (`README.md`, `README.org`, case variants, no extension)
 3. If neither exists → creation mode
 4. If one exists → read and record claims (name, description, structure, features, dependencies, setup, usage, contributing)
@@ -79,15 +79,15 @@ Cover:
 1. Priority order (root configs → entry points → source dirs → tests → CI → docs → metadata)
 2. "Source file" definition (code extensions, exclude tests/generated/lockfiles)
 3. "Major directory" heuristic (≥5 source files or entry-point marker)
-4. Exploration cap with per-priority allocation:
+4. Exploration cap with per-priority allocation (max 30 total):
    - Root configs: max 5
    - Entry points: max 5
-   - Source dirs: max 15
+   - Source dirs: max 13
    - Tests: max 3
    - CI/DevOps: max 2
    - Docs/Metadata: max 2 combined
 5. Large file handling (>2000 lines or >20KB → read first 100 lines only)
-6. Context protection note
+6. Context protection: if total content exceeds LLM context window, prioritize most recent/important files and summarize the rest
 7. Unreadable file handling (skip binaries/permission-denied)
 8. Factual model schema (Claim, Evidence, Type)
 
@@ -175,7 +175,7 @@ Cover:
 2. Conflict resolution heuristic:
    a. Content beats structure
    b. Specific beats general
-   c. If unresolved → re-prompt with Change A / Change B / Reject Both / Abort
+   c. If unresolved → re-prompt with conflicting changes. Options: Choose Change A, Choose Change B, Reject Both, or Abort. If unrecognized input, re-prompt with same options. This mid-application re-prompt is NOT subject to the 2-round feedback cap.
 3. Apply inline to chosen primary file (preserve wording/structure)
 4. If no README → create from scratch
 5. Write back to exact original filename (or `README.md` if none existed)
@@ -202,22 +202,21 @@ git commit -m "feat: add Application phase to /readme skill"
 Cover all edge cases from the spec:
 - No README / empty README → creation mode
 - Codebase has no recognizable structure → bypass category system, present minimal suggestion
-- User rejects all categories → graceful exit
-- User feedback contradicts evidence → respect but note in transcript
-- Contradictory feedback across rounds → respect latest, flag inconsistency
+- User rejects all categories → "No changes approved. README left as-is."
+- User feedback contradicts evidence → respect but note in transcript: "Noted: user prefers X. Codebase evidence suggests Y. Applied user's preference."
+- Contradictory feedback across rounds → respect latest, flag inconsistency in transcript
 - Write fails → present full README in code block
-- README is `.org` format → preserve Org-mode syntax, never suggest `.md` conversion
-- Very large README (>5000 lines / >50KB) → summarize
-- Binary/unreadable README → warn, treat as missing
-- Empty working directory → report and exit
+- Very large README (>5000 lines / >50KB) → summarize. Flag: "README is very large; analysis may be incomplete."
+- Binary/unreadable README → "README file found but cannot be read. Please check permissions or encoding." Treat as missing but warn not to overwrite without investigating
+- Empty working directory → "This directory appears to be empty. No README can be generated." Exit gracefully.
 - Exploration file unreadable (binary, permission-denied) → skip, continue exploration
-- Symlinked README → follow only if target within working directory
+- Symlinked README → follow only if target within working directory. If not followed, create new `README.md`/`README.org` alongside symlink rather than overwriting symlink itself
 - Read-only README → report error, present content
 - README without extension → preserve exact filename
 - Both `.md` and `.org` exist → prompt user, merge, write to chosen file
 - Git repo detected → create backup before writing
 - README references assets → preserve paths
-- Partial analysis (30-file cap reached) → flag to user
+- Partial analysis (30-file cap reached) → flag: "Analysis capped at 30 files — some areas of the codebase may not have been fully explored."
 - Loose source files in root → read up to 3
 
 - [ ] **Step 2: Commit**
