@@ -23,3 +23,24 @@ The agent follows a three-phase analysis and generates a single HTML file:
 1. **Scan & Categorize** — bucket tool calls and reasoning into effort categories
 2. **Detect Friction** — identify patterns that indicate repo/workflow issues
 3. **Summarize & Report** — compute metrics, fill WIRED HTML template, write to disk, open browser
+
+## Analysis Instructions
+
+### Phase 1: Scan & Categorize
+
+Scan the conversation context for tool calls and reasoning patterns. Bucket each into one of these categories based on signals:
+
+| Category | Signals |
+|----------|---------|
+| **Coding** | `Write`, `Edit`, `read` on source files; code generation blocks; refactoring commands |
+| **Debugging** | `systematic-debugging` skill invocations; error logs; repeated tool calls on the same file; `bash` debugging commands |
+| **Research** | `websearch`, `webfetch`, `codesearch`, `context7_query-docs`; reading docs or external resources |
+| **Testing** | `test-driven-development` skill; test execution commands; assertion failures; `pytest`, `jest`, etc. |
+| **Waiting** | `bash` timeouts; external process waits; sleep-like patterns |
+| **Misc** | User greetings, clarifying questions, plan updates, meta-discussion |
+
+**Heuristics:**
+- Estimate tool-call counts per category by scanning the conversation transcript for tool-usage markers (e.g., "`Write`", "`Edit`", "`websearch`"). Approximate counts, not structured log parses.
+- Layer qualitative "attention weight" by considering message length and reasoning depth.
+- Detect task boundaries: a new user request following a completion message; a shift from planning to execution marked by `TodoWrite` or plan presentation; a cluster of tool calls following a reasoning block.
+- Note each task boundary: user request → agent plan → execution → completion or abandonment.
