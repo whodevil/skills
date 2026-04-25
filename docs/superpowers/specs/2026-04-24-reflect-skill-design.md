@@ -104,6 +104,7 @@ For each friction point, the agent records:
 #### Phase 3: Summarize Success Metrics
 
 - Tasks initiated vs. completed (with brief descriptions).
+- Per-task effort estimate: approximate the agent's attention investment per task based on message count, reasoning depth, and tool calls within that task's boundary. Use qualitative labels: `Low` (few messages, simple), `Medium` (moderate back-and-forth), `High` (complex, many iterations, debugging required).
 - Key decisions made and their rationale.
 - Token/attention distribution across categories (qualitative estimate).
 
@@ -130,7 +131,7 @@ The HTML is a single-column, broadsheet-dense layout:
 
 1. **Masthead**: Session title ("Session Retrospective"), project name, timestamp. Kicker in mono above.
 2. **Executive Summary**: 3–4 sentence overview. Large serif text.
-3. **Attention Breakdown**: CSS-based horizontal bar chart showing estimated distribution derived from tool-call counts per category. Labeled as "Estimated Attention Distribution" — not precise percentages, but proportional representation. Mono labels, ink-blue bars.
+3. **Attention Breakdown**: CSS-based horizontal bar chart showing estimated distribution derived from tool-call counts per category. Labeled as "Estimated Attention Distribution" — percentages are approximate (based on proportional tool-call counts), not precise measurements. Mono labels, ink-blue bars.
 4. **Task Log**: Table of tasks (completed vs. abandoned), with effort estimates and outcomes.
 5. **Friction Points & Recommendations**: Numbered list. Each item has a kicker severity badge (HIGH, MEDIUM, LOW), a headline, evidence, and a recommended fix.
 6. **Key Decisions**: Bullet list of major architectural or technical choices, with rationale.
@@ -163,15 +164,15 @@ The embedded template uses these placeholders. Each is replaced with raw HTML fr
 
 | Placeholder | Content Type | Surrounding Markup |
 |-------------|--------------|-------------------|
-| `{{PROJECT_NAME}}` | Plain text string | Inside `<h1>` masthead |
-| `{{TIMESTAMP}}` | Plain text string | Inside `<time>` element |
+| `{{PROJECT_NAME}}` | Plain text string (HTML-escaped) | Inside `<h1>` masthead |
+| `{{TIMESTAMP}}` | Plain text string (HTML-escaped) | Inside `<time>` element |
 | `{{EXECUTIVE_SUMMARY}}` | HTML paragraph(s) | Inside `<section id="summary">` |
 | `{{ATTENTION_BREAKDOWN_BARS}}` | HTML `<div class="bar-row">` elements | Inside `<section id="attention">` |
 | `{{TASK_LOG_ROWS}}` | HTML `<tr>` elements | Inside `<tbody>` of task table |
 | `{{FRICTION_POINTS}}` | HTML `<li>` or `<article>` elements | Inside `<ol>` or `<section id="friction">` |
 | `{{KEY_DECISIONS}}` | HTML `<li>` elements | Inside `<ul>` or `<section id="decisions">` |
 
-If any placeholder is not filled, its entire surrounding `<section>` (or equivalent wrapper) is removed from the output.
+Stripping rule: if a section-wrapped placeholder is not filled, its entire surrounding `<section>` (or equivalent wrapper like `<tbody>`, `<ol>`, `<ul>`) is removed. `{{PROJECT_NAME}}` and `{{TIMESTAMP}}` are never stripped — they always have fallback values (`Unknown Project` and the current timestamp, respectively).
 
 #### Bar Chart Markup Structure
 
@@ -248,9 +249,9 @@ The skill embeds the following complete, self-contained template as a fenced cod
       --text-secondary: #595959;
       --accent: #0A6ECC;
       --border: #E2E2E2;
-      --kicker: ui-monospace, SF Mono, Menlo, monospace;
-      --display: Georgia, Times New Roman, Times, serif;
-      --body: Georgia, Times New Roman, Times, serif;
+      --kicker: ui-monospace, "SF Mono", Menlo, monospace;
+      --display: Georgia, "Times New Roman", Times, serif;
+      --body: Georgia, "Times New Roman", Times, serif;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
