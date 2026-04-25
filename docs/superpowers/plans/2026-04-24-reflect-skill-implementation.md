@@ -543,10 +543,12 @@ When invoked, follow this sequence:
 3. **Copy the template** and replace all `{{PLACEHOLDER}}` markers with fragments.
 4. **Strip empty sections** according to the stripping rule.
 5. **Get timestamp** via `bash` tool: `date +%Y-%m-%d-%H-%M-%S`
-6. **Write the HTML** to `/tmp/reflect-<timestamp>.html`
-7. **Open the browser** via `bash` tool:
-   - macOS: `open /tmp/reflect-<timestamp>.html`
-   - Linux: `xdg-open /tmp/reflect-<timestamp>.html`
+6. **Derive prefix** from session topic or project name (e.g., `skills`, `reflect-skill`).
+7. **Ensure directory exists** via `bash` tool: `mkdir -p docs/retro`
+8. **Write the HTML** to `docs/retro/<prefix>-<timestamp>.html`
+9. **Open the browser** via `bash` tool:
+   - macOS: `open docs/retro/<prefix>-<timestamp>.html`
+   - Linux: `xdg-open docs/retro/<prefix>-<timestamp>.html`
    - Windows: **out of scope** — report the file path to the user instead
 ```
 
@@ -578,7 +580,8 @@ Add after execution flow:
 | **Browser open fails** | Report the file path in the conversation so the user can open it manually. |
 | **Unsupported OS (Windows)** | Skip browser-open. Report the file path in the conversation. |
 | **Template variable missing** | Strip out the unfilled placeholder and its surrounding `<section>` wrapper. Never crash HTML generation. |
-| **`/tmp` not writable** | Attempt to write to the current working directory as fallback. If that also fails, output the raw HTML in a conversation message block. |
+| **`docs/retro/` does not exist** | Create the directory via `bash` tool: `mkdir -p docs/retro` before writing. |
+| **`docs/retro/` not writable** | Attempt to write to the current working directory as fallback. If that also fails, output the raw HTML in a conversation message block. |
 ```
 
 - [ ] **Step 2: Commit**
@@ -695,12 +698,12 @@ You are an AI assistant with the reflect skill loaded.
 
 The skill is at /Users/whodevil/src/skills/reflect/SKILL.md. Read it and follow its instructions to analyze the conversation at /Users/whodevil/src/skills/test-conversation.md.
 
-Generate the HTML report and attempt to open it in the browser (or at least write it to /tmp/ and report the path if browser open fails).
+Generate the HTML report and attempt to open it in the browser (or at least write it to `docs/retro/` and report the path if browser open fails).
 ```
 
 - [ ] **Step 2: Verify compliance**
 
-Check the generated HTML at `/tmp/reflect-*.html`:
+Check the generated HTML at `docs/retro/*.html`:
 - Does it contain WIRED design tokens (`#FDFCF8`, `#0A6ECC`, Georgia font)?
 - Does it have all seven sections?
 - Are categories identified (Coding: auth.py edits, Testing: pytest runs, Debugging: systematic-debugging)?
@@ -811,7 +814,8 @@ Copy the template from the skill, fill with dummy data, and verify it renders co
 
 ```bash
 # Create a test HTML file with sample data
-cat > /tmp/reflect-test.html << 'EOF'
+mkdir -p docs/retro
+cat > docs/retro/test-render-2026-04-25-00-00-00.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -982,7 +986,7 @@ cat > /tmp/reflect-test.html << 'EOF'
 EOF
 
 # Open in browser
-open /tmp/reflect-test.html
+open docs/retro/test-render-2026-04-25-00-00-00.html
 ```
 
 - [ ] **Step 3: Final commit**

@@ -39,8 +39,10 @@ When the user types `/reflect`, the agent:
    - The complete WIRED HTML template (inline CSS, layout structure).
 3. **Performs analysis** over the current conversation context.
 4. **Fills the template** with computed findings.
-5. **Writes the HTML** to a temporary file (`/tmp/reflect-YYYY-MM-DD-HH-MM-SS.html`).
-6. **Opens the browser** via a `bash` tool call (`open /tmp/reflect-YYYY-MM-DD-HH-MM-SS.html` on macOS, `xdg-open /tmp/reflect-YYYY-MM-DD-HH-MM-SS.html` on Linux).
+5. **Writes the HTML** to `docs/retro/<prefix>-YYYY-MM-DD-HH-MM-SS.html`.
+6. **Opens the browser** via a `bash` tool call (`open docs/retro/<prefix>-YYYY-MM-DD-HH-MM-SS.html` on macOS, `xdg-open docs/retro/<prefix>-YYYY-MM-DD-HH-MM-SS.html` on Linux).
+
+The prefix is derived from the session's primary topic or project name (e.g., `skills`, `reflect-skill`, `auth-bug-fix`). The timestamp is obtained via a `bash` tool call: `date +%Y-%m-%d-%H-%M-%S`.
 
 The timestamp is obtained via a `bash` tool call: `date +%Y-%m-%d-%H-%M-%S`.
 
@@ -466,7 +468,7 @@ Agent fills WIRED HTML template
     ├── Build friction point list
     └── Build key decisions list
     ↓
-Agent writes HTML to /tmp/reflect-<timestamp>.html
+Agent writes HTML to docs/retro/<prefix>-<timestamp>.html
     ↓
 Agent opens browser via bash tool
     └── macOS: open <file>
@@ -484,7 +486,8 @@ Agent opens browser via bash tool
 | **Browser open fails** | Report the file path in the conversation so the user can open it manually. |
 | **Unsupported OS (Windows)** | Skip the browser-open step entirely. Report the file path in the conversation so the user can open it manually. |
 | **Template variable missing** | Strip out the unfilled placeholder and its surrounding section wrapper (`<section>` or `<div>`); never crash the HTML generation. |
-| **`/tmp` not writable** | Attempt to write to the current working directory as fallback. If that also fails, output the raw HTML in a conversation message block so the user can save it manually. |
+| **`docs/retro/` does not exist** | Create the directory via `bash` tool: `mkdir -p docs/retro` before writing. |
+| **`docs/retro/` not writable** | Attempt to write to the current working directory as fallback. If that also fails, output the raw HTML in a conversation message block so the user can save it manually. |
 
 ---
 
@@ -524,10 +527,10 @@ This is a **technique skill**, so testing follows the `writing-skills` RED-GREEN
 The generated HTML is written to:
 
 ```
-/tmp/reflect-YYYY-MM-DD-HH-MM-SS.html
+docs/retro/<prefix>-YYYY-MM-DD-HH-MM-SS.html
 ```
 
-This location is ephemeral by design — the report is meant for immediate review, not archival. If the user wants persistence, they can save the file manually from the browser.
+The `docs/retro/` directory is created if it does not exist. The prefix is derived from the session's primary topic or project name (e.g., `skills`, `reflect-skill`). This keeps reports organized and discoverable within the repository.
 
 ---
 

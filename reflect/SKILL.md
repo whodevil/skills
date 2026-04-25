@@ -358,11 +358,13 @@ When invoked, follow this sequence:
 3. **Copy the template** and replace all `{{PLACEHOLDER}}` markers with fragments.
 4. **Strip empty sections** according to the stripping rule.
 5. **Get timestamp** via `bash` tool: `date +%Y-%m-%d-%H-%M-%S`
-6. **Write the HTML** to `/tmp/reflect-<timestamp>.html`
+6. **Write the HTML** to `docs/retro/<prefix>-<timestamp>.html`
 7. **Open the browser** via `bash` tool:
-   - macOS: `open /tmp/reflect-<timestamp>.html`
-   - Linux: `xdg-open /tmp/reflect-<timestamp>.html`
+   - macOS: `open docs/retro/<prefix>-<timestamp>.html`
+   - Linux: `xdg-open docs/retro/<prefix>-<timestamp>.html`
    - Windows: **out of scope** — report the file path to the user instead
+
+**Filename prefix:** Derive a short, relevant prefix from the session content. Use the project name (e.g., `skills`), or if the session has a clear primary topic, use a 2–4 word kebab-case summary (e.g., `reflect-skill`, `auth-bug-fix`, `api-refactor`). Fallback to `session` if no clear topic emerges. The full filename format is: `<prefix>-YYYY-MM-DD-HH-MM-SS.html`.
 
 ## Error Handling
 
@@ -373,4 +375,5 @@ When invoked, follow this sequence:
 | **Browser open fails** | Report the file path in the conversation so the user can open it manually. |
 | **Unsupported OS (Windows)** | Skip browser-open. Report the file path in the conversation. |
 | **Template variable missing** | Strip out the unfilled placeholder and its surrounding `<section>` wrapper. Never crash HTML generation. |
-| **`/tmp` not writable** | Attempt to write to the current working directory as fallback. If that also fails, output the raw HTML in a conversation message block. |
+| **`docs/retro/` does not exist** | Create the directory via `bash` tool: `mkdir -p docs/retro` before writing. |
+| **`docs/retro/` not writable** | Attempt to write to the current working directory as fallback. If that also fails, output the raw HTML in a conversation message block. |
