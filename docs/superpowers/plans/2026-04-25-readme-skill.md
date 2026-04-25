@@ -53,7 +53,7 @@ Cover:
 1. **Working directory root detection:** If invoked from a subdirectory, search upward for nearest directory containing `README.md`, `README.org`, or `.git` folder. Treat that as project root. If none found, use current working directory and proceed normally.
 2. `glob` for README files (`README.md`, `README.org`, case variants, no extension)
 3. If neither exists → creation mode
-4. If one exists → read and record claims (name, description, structure, features, dependencies, setup, usage, contributing)
+4. If one exists → read and record claims (name, description, structure, features, dependencies, setup, usage, contributing, testing)
 5. If both `README.md` and `README.org` exist → prompt user to choose, read both, merge claims (use more detailed version for conflicts)
 6. If `README` (no extension) coexists with `README.md` or `README.org` → prefer the extension-bearing file without prompting
 7. Tie-breaker rules for case variants (prefer standard-cased over `Readme.md`)
@@ -82,7 +82,7 @@ Cover:
 4. Exploration cap with per-priority allocation (max 30 total):
    - Root configs: max 5
    - Entry points: max 5
-   - Source dirs: max 13
+   - Source dirs: max 13 (spec says 15, but capped at 13 to respect 30-file total limit)
    - Tests: max 3
    - CI/DevOps: max 2
    - Docs/Metadata: max 2 combined
@@ -271,6 +271,7 @@ Verify:
 - Error handling is comprehensive
 - Instructions are clear and actionable for an LLM agent
 - No TODOs or placeholders remain
+- All spec Section 7 Success Criteria are met (discrepancies in ≥3 categories, per-category approval, .org preservation, creation mode, 30-file cap)
 
 - [ ] **Step 4: Commit**
 
@@ -293,17 +294,15 @@ Since this is a prompt-based skill, testing is manual:
 
 **Test D:** Create a test repo with both `README.md` and `README.org`. Verify it prompts user to choose and merges concepts.
 
-**Test E:** Verify the feedback loop works (provide feedback, see refinement, hit cap after 2 rounds).
+**Test E:** Verify the feedback loop works (provide feedback, see refinement, hit cap after 2 rounds). Verify Quit works mid-loop.
 
-**Test F:** Verify Quit works mid-loop.
+**Test F (Spec E):** Empty/minimal README. Verify skill treats near-empty README as creation scenario.
 
-**Test G (Spec E):** Empty/minimal README. Verify skill treats near-empty README as creation scenario.
+**Test G (Spec F):** Large codebase. Verify exploration capping works and skill doesn't hang.
 
-**Test H (Spec F):** Large codebase. Verify exploration capping works and skill doesn't hang.
+**Test H (Spec H):** Conflict resolution. Verify when two approved categories propose changes to same section, skill resolves by preferring narrower-scope change.
 
-**Test I (Spec H):** Conflict resolution. Verify when two approved categories propose changes to same section, skill resolves by preferring narrower-scope change.
-
-**Test J (Spec I):** Unreadable exploration file. Verify skill skips binary/unreadable files without aborting.
+**Test I (Spec I):** Unreadable exploration file. Verify skill skips binary/unreadable files without aborting.
 
 ---
 
