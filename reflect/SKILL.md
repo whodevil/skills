@@ -107,3 +107,213 @@ Inject **two kinds of content** with different escaping:
 - Hierarchy via borders (`1px solid #E2E2E2`), weight (`font-weight: 700` for headlines), and whitespace — no drop shadows.
 - Generous line height (`1.6`) for body text; tight leading (`1.1`) for display headlines.
 - Max content width `680px`, centered, with generous top/bottom padding (`64px`).
+
+### Complete HTML Template
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session Retrospective — {{PROJECT_NAME}}</title>
+  <style>
+    :root {
+      --bg: #FDFCF8;
+      --text: #1A1A1A;
+      --text-secondary: #595959;
+      --accent: #0A6ECC;
+      --border: #E2E2E2;
+      --kicker: ui-monospace, "SF Mono", Menlo, monospace;
+      --display: Georgia, "Times New Roman", Times, serif;
+      --body: Georgia, "Times New Roman", Times, serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      line-height: 1.6;
+      padding: 64px 24px;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .kicker {
+      font-family: var(--kicker);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-family: var(--display);
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .meta {
+      font-family: var(--kicker);
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 48px;
+    }
+    section {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+    }
+    h2 {
+      font-family: var(--display);
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .summary-text {
+      font-size: 18px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+    }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .bar-label {
+      font-family: var(--kicker);
+      font-size: 12px;
+      text-transform: uppercase;
+      width: 100px;
+      flex-shrink: 0;
+    }
+    .bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      background: var(--accent);
+    }
+    .bar-value {
+      font-family: var(--kicker);
+      font-size: 12px;
+      width: 48px;
+      text-align: right;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      font-family: var(--kicker);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+    .badge {
+      display: inline-block;
+      font-family: var(--kicker);
+      font-size: 11px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border: 1px solid var(--text);
+      margin-right: 8px;
+    }
+    .badge-high { border-color: #DC2626; color: #DC2626; }
+    .badge-medium { border-color: var(--text-secondary); color: var(--text-secondary); }
+    .badge-low { border-color: var(--border); color: var(--text-secondary); }
+    ol, ul {
+      padding-left: 24px;
+    }
+    li {
+      margin-bottom: 16px;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 12px;
+      overflow-x: auto;
+      font-family: var(--kicker);
+      font-size: 13px;
+      line-height: 1.4;
+      margin: 8px 0;
+    }
+    code {
+      font-family: var(--kicker);
+      font-size: 13px;
+    }
+    footer {
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      margin-top: 48px;
+      font-family: var(--kicker);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="kicker">Session Retrospective</div>
+    <h1>{{PROJECT_NAME}}</h1>
+    <div class="meta"><time>{{TIMESTAMP}}</time></div>
+
+    <section id="summary">
+      {{EXECUTIVE_SUMMARY}}
+    </section>
+
+    <section id="attention">
+      <h2>Estimated Attention Distribution</h2>
+      {{ATTENTION_BREAKDOWN_BARS}}
+    </section>
+
+    <section id="tasks">
+      <h2>Task Log</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Status</th>
+            <th>Effort</th>
+            <th>Outcome</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{TASK_LOG_ROWS}}
+        </tbody>
+      </table>
+    </section>
+
+    <section id="friction">
+      <h2>Friction Points &amp; Recommendations</h2>
+      <ol>
+        {{FRICTION_POINTS}}
+      </ol>
+    </section>
+
+    <section id="decisions">
+      <h2>Key Decisions</h2>
+      <ul>
+        {{KEY_DECISIONS}}
+      </ul>
+    </section>
+
+    <footer>
+      Generated by reflect skill &middot; {{TIMESTAMP}}
+    </footer>
+  </div>
+</body>
+</html>
+```
