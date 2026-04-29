@@ -1,10 +1,10 @@
 # skills
 
-A collection of [OpenCode](https://opencode.ai) agent skills.
+A collection of [agent skills](https://agentskills.io/home).
 
 ## What's Inside
 
-This repository contains self-contained, prompt-based skills that extend an OpenCode agent's capabilities. Each skill lives in its own directory and includes a `SKILL.md` file with instructions, templates, and heuristics the agent follows when the skill is invoked.
+This repository contains self-contained, prompt-based skills that extend an agent's capabilities. Each skill lives in its own directory and includes a `SKILL.md` file with instructions, templates, and heuristics the agent follows when the skill is invoked.
 
 ### Included Skills
 
@@ -31,14 +31,14 @@ This repository contains self-contained, prompt-based skills that extend an Open
 
 ## Installation
 
-Skills are loaded by OpenCode from `~/.config/opencode/skills/`. To install a skill from this repo, create a symlink:
+Skills are loaded by the agent from `~/.agents/skills/`. To install a skill from this repo, create a symlink:
 
 ```bash
-ln -s /path/to/this/repo/readme ~/.config/opencode/skills/readme
+ln -s /path/to/this/repo/readme ~/.agents/skills/readme
 ln -s /path/to/this/repo/retro ~/.config/opencode/skills/retro
 ```
 
-After symlinking, the skill is available in any OpenCode session. For example:
+After symlinking, the skill is available in any agent session. For example:
 
 ```
 /readme
@@ -58,4 +58,4 @@ The `test-conversation.md` file provides a synthetic session log used to validat
 
 ## Contributing
 
-Add new skills by creating a top-level directory with a `SKILL.md` file following the OpenCode skill format (YAML frontmatter + Markdown instructions). Update this README when adding skills.
+Add new skills by creating a top-level directory with a `SKILL.md` file following the [agent skill](https://agentskills.io/specification) format (YAML frontmatter + Markdown instructions). Update this README when adding skills.
