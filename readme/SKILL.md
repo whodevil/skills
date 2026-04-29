@@ -9,14 +9,14 @@ description: Use when the user wants to review, update, or create a README for t
 
 When invoked (e.g., `/readme`), this skill analyzes the current codebase, compares it against the existing README (or creates one if absent), and presents categorized improvement suggestions to the user for approval before applying them.
 
-**Approval granularity:** The user approves or rejects changes **per category**, not per individual issue. All issues within a category are approved or rejected as a batch. The user can provide feedback to refine a category before approving.
+**Approval granularity:** The user approves or rejects changes **per individual issue**. Issues are presented one at a time, in category order. The user can provide feedback to refine any individual issue before approving.
 
 **Six-phase pipeline:**
 1. **Discovery** — detect and read the README
 2. **Exploration** — deeply explore the codebase
 3. **Analysis** — compare README claims against reality
-4. **Presentation** — show findings one category at a time
-5. **Approval Loop** — user chooses: Approve, Reject, Skip, Feedback, or Quit
+4. **Presentation** — show findings one issue at a time, in category order
+5. **Approval Loop** — user chooses: Approve, Reject, Skip, Feedback, or Quit for each individual issue
 6. **Application** — compile approved changes and write the README
 
 ## When to Use
@@ -135,54 +135,56 @@ For each discrepancy, record:
 
 ## Phase 4: Presentation
 
-Present findings to the user **one category at a time**.
+Present findings to the user **one issue at a time**, in category order.
 
-**Empty categories:** If a category has zero issues, skip presenting it entirely. Do not say "no issues found." Only present categories with ≥1 issue.
+**Empty categories:** If a category has zero issues, skip it entirely. Do not say "no issues found."
 
-For each non-empty category:
-1. State the category name.
-2. Summarize how many issues were found.
-3. List each issue with:
+Before beginning the issue-by-issue loop, announce a brief summary: how many total issues were found across all categories. For example: "Found 7 issues across 3 categories. I'll walk through them one by one."
+
+For each issue:
+1. State the category name and a progress indicator (e.g., "Issue 2 of 7 — Feature Coverage").
+2. Show the issue with:
    - The current README claim (if any)
    - The evidence from the codebase
    - The proposed change
-4. Ask the user for a response. Valid responses are defined in Phase 5.
+3. Ask the user for a response. Valid responses are defined in Phase 5.
 
 ---
 
 ## Phase 5: Approval Loop
 
-For each category, prompt the user with:
+For each individual issue, prompt the user with:
 
-> **Category: [Feature Coverage / Setup / Dependencies / Structure / API]**
-> [Issue 1 description with evidence and proposed change]
-> [Issue 2 ...]
+> **[Category Name] — Issue [N] of [Total]**
+> **Current:** [existing README text, or "Not present"]
+> **Evidence:** [file path or snippet]
+> **Proposed change:** [specific text or section to add/update/remove]
 >
 > What would you like to do?
-> - **Approve** — apply all proposed changes in this category
-> - **Reject** — discard all proposed changes in this category
-> - **Skip** — save for later, move to the next category
+> - **Approve** — queue this change for application
+> - **Reject** — discard this change
+> - **Skip** — save for later, move to the next issue
 > - **Feedback** — tell me how to refine (e.g., "focus on X", "this is wrong because Y")
 > - **Quit** — exit without applying any pending or future changes
 
-**If Approve:** Queue all proposed changes in this category for the final Application phase.
+**If Approve:** Queue this individual change for the final Application phase, then move to the next issue.
 
-**If Reject:** Discard and move to the next category.
+**If Reject:** Discard this change and move to the next issue.
 
-**If Skip:** Note the category as skipped and move on. (User can re-invoke `/readme` later to revisit.)
+**If Skip:** Note the issue as skipped and move on. (User can re-invoke `/readme` later to revisit.)
 
 **If Feedback:**
 1. Record the user's feedback.
-2. Refine the category's findings based on the feedback.
-3. Re-present the refined category.
+2. Refine this issue's proposed change based on the feedback.
+3. Re-present the refined issue.
 4. The user can then Approve, Reject, Skip, or give more Feedback.
-5. **Iteration cap:** Maximum 2 feedback rounds per category. One feedback round = one instance of the user providing feedback text. After the 2nd round of feedback, force a decision: present the final refined category and ask the user to Approve, Reject, or Skip. Do not allow further feedback.
+5. **Iteration cap:** Maximum 2 feedback rounds per issue. After the 2nd round, force a decision: present the final refined issue and ask the user to Approve, Reject, or Skip. Do not allow further feedback.
 
 **If Quit:** Immediately discard all pending and future changes, exit the loop, and report: "Exited without applying any changes. README left as-is."
 
 **Unrecognized input:** If the user responds with something other than Approve, Reject, Skip, Feedback, or Quit, re-prompt with: "I didn't understand that. Please choose: Approve, Reject, Skip, Feedback, or Quit." Do not proceed until a valid choice is given.
 
-Continue until all categories are processed.
+Continue until all issues are processed.
 
 ---
 
@@ -254,7 +256,7 @@ The skill uses these as a checklist when analyzing Structure/Formatting gaps, bu
 ## Success Criteria
 
 - The skill correctly identifies discrepancies between the README and the codebase in at least 3 of the 5 categories.
-- The user can approve, reject, skip, or provide feedback on each category.
+- The user can approve, reject, skip, or provide feedback on each individual issue, one at a time.
 - The skill preserves `.org` format when updating `README.org`.
 - The skill creates a new README if none exists, structured according to best practices.
 - The skill caps exploration at ~30 files to avoid excessive tool calls.
