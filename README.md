@@ -35,7 +35,7 @@ Skills are loaded by the agent from `~/.agents/skills/`. To install a skill from
 
 ```bash
 ln -s /path/to/this/repo/readme ~/.agents/skills/readme
-ln -s /path/to/this/repo/retro ~/.config/opencode/skills/retro
+ln -s /path/to/this/repo/retro ~/.agents/skills/retro
 ```
 
 After symlinking, the skill is available in any agent session. For example:
